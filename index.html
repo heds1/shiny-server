@@ -1,120 +1,113 @@
-<!DOCTYPE html>
-<html lang="en-US" xmlns="http://www.w3.org/1999/xhtml">
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+
 <head>
-  <title>Shiny Server - Hedley Stirrat</title>
-  <!-- Required meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>
+        Shiny Server - Hedley Stirrat
+    </title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <style type="text/css">
-    body, html {
-      font-family: Helvetica, Arial, sans-serif;
-      background-color: #F5F5F5;
-      color: #114;
-      margin: 0;
-      padding: 0;
-    }
-    a {
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    #titleBar {
-      height: 80px;
-      background-color: #3475b4;
-      overflow: hidden;
-      border-bottom: 1px solid #3475b3;
-      -moz-box-shadow:    0px 0px 10px 3px #BBC;
-      -webkit-box-shadow: 0px 0px 10px 3px #BBC;
-      box-shadow:         0px 0px 10px 3px #BBC;
-    }
-    #titleBar #container {
-      margin-top: 14px;
-    }
-    #titleBar h1 {
-      margin: 0 auto .5em auto;
-      padding: .2em;
-      color: #EEE;
-      text-align: center;
-    }
-    #intro {
-      background-color: #DDD;
-      margin: 1em 1em 0 1em;
-      padding: .75em;
-      text-align: center;
-      border: 1px solid #CCC;
-      font-size: 18px;
-    }
-    #intro p {
-      margin: .3em 0 .3em 0;
-    }
-    #outer-content {
-      max-width: 910px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    #content {
-      margin: 1em auto 1em auto;
-      max-width: 650px;
-    }
-    #main{
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 24px;
-      text-align: center;
-    }
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-    #shiny{
-      float: left;
-      width: 305px;
-      margin-left: -330px;
-      padding-left: 20px;
-      border-left: 1px solid #AAA;
-    }
-    #shiny iframe {
-      margin-top: 30px;
-    }
-    .caption{
-      font-size: 13px;
-    }
-    code {
-      background-color: #E5E5E5;
-      border: 1px solid #AAA;
-      -webkit-border-radius: 3px;
-      -khtml-border-radius: 3px; 
-      -moz-border-radius: 3px;
-      border-radius: 3px;
-      padding: 0 .5em 0 .5em;
-    }
-    .jumbotron {
-      padding: 2rem 1rem;
-      margin-bottom: 2rem;
-      background-color: #e9ecef;
-      border-radius: .3rem;
-    }
+    <!-- Personal CSS -->
+    <link rel="stylesheet" href="./css/style.css" />
 
-  </style>
 </head>
-<body>
-  <div id="titleBar">
-    <div id="container">
-      <h3>Home</h3>
-      <h1>Welcome to my personal Shiny Server!</h1>
+
+<body style="overflow-x: hidden;">
+
+    <!-- collapsible sidebar https://bootstrapious.com/p/bootstrap-sidebar#sidebar-1 -->
+    <!-- jQuery CDN - Slim version (=without AJAX) -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <!-- Popper.JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+    <!-- Font Awesome for collapsible sidebar button -->
+    <script src="https://kit.fontawesome.com/ff8b0f2e3d.js" crossorigin="anonymous"></script>
+
+    <div class="wrapper">
+
+        <nav class="navbar navbar-light navbar-expand-md bg-light justify-content-md-center justify-content-end">
+            <button class="navbar-toggler ml-1" type="button" data-toggle="collapse" data-target="#collapsingNavbar2">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <!-- <a class="nav-link" href="#"><i class="fa fa-search mr-1"></i></a>  -->
+            <div class="navbar-collapse collapse justify-content-between align-items-center w-100" id="collapsingNavbar2">
+                <ul class="nav navbar-nav flex-row justify-content-md-center justify-content-start flex-nowrap" style="width: 184px;">
+                </ul>
+                <ul class="navbar-nav mx-auto text-md-center text-left">
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://hedleystirrat.co.nz">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://hedleystirrat.co.nz/blog/">Posts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://hedleystirrat.co.nz/about/">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://apps.hedleystirrat.co.nz/">Apps</a>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav flex-row justify-content-md-center
+                justify-content-center flex-nowrap" style="padding-top: 10px;
+                padding-bottom: 10px;">
+                    <li class="nav-item">
+                        <a href="https://github.com/heds1">
+                            <img src="./img/github.png" style="width: 27px; height:27px" />
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="https://www.linkedin.com/in/hedley-stirrat-4b26b2117/">
+                            <img src="./img/linkedin.png" style="width: 30px; height:27px" />
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="https://stackoverflow.com/users/7978445/heds1">
+                            <img src="./img/so.png" style="width: 27px; height:27px" />
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+  
+        <!-- Content container -->
+        <div id="main">
+    
+            <br />
+
+            <!-- main content of page -->
+            <div id="intro">
+              <p>The R Shiny apps that you can find here are hosted using the free, open-source version of <a href="https://rstudio.com/products/shiny/shiny-server/">Shiny Server</a>. <strong>This page is still under development.</strong> </p>
+            </div>
+
+            <div class="jumbotron">
+              <h1 class="display-4"><a href="https://apps.hedleystirrat.co.nz/constellations/">Constellations</a></h1>
+              <p class="lead">The Constellations app generates random star patterns.</p>
+            </div>
+
+        </div>
+
+        <div id="footer">
+            &copy; 2020 Hedley Stirrat | <a id="privacy_tag" href="{% url 'privacy' %}">Privacy</a>
+        </div>
+
     </div>
-  </div>
-  <div id="outer-content">
-    <div id="intro">
-      <p>The R Shiny apps that you can find here are hosted using the free, open-source version of <a href="https://rstudio.com/products/shiny/shiny-server/">Shiny Server</a>. <strong>This page is still under development.</strong> </p>
-    </div>
-    <div id="content">
-      <div id="main">
-	<div class="jumbotron">
-	  <h1 class="display-4"><a href="https://apps.hedleystirrat.co.nz/constellations/">Constellations</a></h1>
-	  <p class="lead">The Constellations app generates random star patterns.</p>
-	</div>
-      </div>
-    </div>
-  </div>
 </body>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active');
+            });
+        });
+    </script>
+
 </html>
+

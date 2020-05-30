@@ -1,0 +1,322 @@
+/* Style code blocks for blog posts.
+	http://web.simmons.edu/~grabiner/comm244/weekfour/code-test.html
+	`code` can be used inline; `pre` is for the actual code blocks
+	within a blog post. */
+  
+    code {
+        font-family: monospace;
+        color: black;
+        display: inline-block;
+        padding: 2px;
+        background: #f4f4f4;
+    }
+      
+    pre {
+        background: #f4f4f4;
+        border: 1px solid #ddd;
+        border-left: 3px solid #87CEFA;
+        color: black;
+        page-break-inside: avoid;
+        font-family: monospace;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 1.6em;
+      max-width: inherit;
+      min-width: inherit;
+        overflow: auto;
+        padding: 1em 1.5em;
+        display: block;
+        word-wrap: break-word;
+    }
+      
+    .body {
+        overflow-x: hidden;
+        padding-bottom: 30px;
+    }
+      
+    /* main content, on mobile*/
+    #main {
+        padding: 5px;
+        margin-left: 10px;
+        min-height: 100vh;
+        max-width: 100vw;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    
+    
+    /* blog images: center and adjust height (especially for small screens). this
+    requires you to put imgs in p tags.
+    https://stackoverflow.com/questions/6169666/how-to-resize-an-image-to-fit-in-the-browser-window (answer by Neolisk)
+    */
+    #main > p > img {
+        padding: 0;
+        display: block;
+        margin: 0 auto;
+        max-height: 100%;
+        max-width: 100%;
+    }
+    
+    a {
+        color: black;
+    }
+    
+    #footer {
+        text-align: center;
+        bottom: 0;
+        width: 100%;
+        padding-bottom: 30px;
+        color: #4a5568;
+        font-size: 14px;
+    }
+    
+    #privacy_tag {
+        color: #4a5568
+    }
+    
+    li.nav-item {
+        color: #343a40!important;
+      }
+    
+      #collapsingNavbar2 > ul.nav.navbar-nav.flex-row.justify-content-md-center.justify-content-start.flex-nowrap > li {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    #collapsingNavbar2 > ul.navbar-nav.mx-auto.text-md-center.text-left {
+        align-items: center;
+    }
+    
+    #collapsingNavbar2 > ul.nav.navbar-nav.flex-row.justify-content-md-center.justify-content-start.flex-nowrap {
+        padding: 5px;
+    }
+    
+    li.nav-item {
+      color: #343a40!important;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+    
+    /* STYLES FROM 700-1000px */
+    @media (min-width: 700px) and (max-width: 1000px) {
+    
+        .navbar-nav.navbar-center {
+            position: absolute;
+            left: 50%;
+            transform: translatex(-50%);
+        }
+    
+        #main {
+            margin-left: 7%; 
+            margin-right: 7%;
+            padding: 20px;
+            min-height: 100vh;
+        }
+    }
+    
+    /* STYLES FROM 1001-1200px */
+    @media (min-width: 1001px) and (max-width: 1200px) {
+    
+        .navbar-nav.navbar-center {
+            position: absolute;
+            left: 50%;
+            transform: translatex(-50%);
+        }
+    
+        #main {
+            margin-left: 15%; 
+            margin-right: 15%;
+            padding: 20px;
+            min-height: 100vh;
+        }
+    }
+    
+    /* STYLES FROM 1201px upward */
+    @media (min-width: 1201px) {
+    
+        .navbar-nav.navbar-center {
+            position: absolute;
+            left: 50%;
+            transform: translatex(-50%);
+        }
+    
+        #main {
+            margin-left: 25%; 
+            margin-right: 25%;
+            padding: 20px;
+            min-height: 100vh;
+        }
+    }
+    
+    body > div > nav > a.navbar-brand.d-md-none.d-inline {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+    
+    /* shows tag title */
+    #header_title {
+        width: 100%;
+        margin: 0 auto;
+        text-align: center;
+    }
+    
+    /* style columns (left for thumbnail image, right for snippet of post */
+    .column {
+        float: left;
+      }
+      
+    .snippet_image {
+        width: 25%;
+    }
+    
+    .snippet_text {
+        /* width: 75%; */
+        padding: 10px;
+    }
+    
+    a.btn.tagtitle {
+        font-size: 20px;
+        width: 100%;
+        margin: 0 auto;
+        text-align: center;
+        background: none;
+    }
+    
+      /* Clear floats after the columns */
+    .row:after {
+        content: "";
+        display: table;
+        clear: both;
+      }
+    
+    
+    /* ContactForm styling */
+    #main > form > p > label {
+        /* font-weight: bold; */
+        width: 100%;
+    }
+    
+    /* Generate a red asterisk before required fields in forms. */
+    form label.required:before {
+        color: red;
+        content: "* ";
+    }
+    
+    input#id_cc {
+        width: 5%
+    }
+    
+    input {
+        width: 100%;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    
+    textarea {
+        width: 100%;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    
+    
+    
+    
+    
+      
+    
+      
+      .active_navitem {
+        font-weight: bold;
+        color: #343a40!important;
+      }
+    
+    
+    
+    
+    a.btn {
+        background-color: #f3f5f9;
+        border: 1px solid #f3f5f9;
+        border-radius: 3px;
+        color: #405379;
+        font-size: 14px;
+        letter-spacing: .5px;
+        margin: 0 2px;
+        padding: 3px 4px 2px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+    
+      a.btnInSidebar {
+        /* background-color: red!important; Green */
+        /* border: 1px solid;
+        padding: .10rem 0.75rem; */
+        background-color: #87CEFA;
+        border: 1px solid #87CEFA;
+        border-radius: 3px;
+        color: #405379;
+        font-size: 14px;
+        letter-spacing: .5px;
+        margin: 0 2px;
+        padding: 3px 4px 2px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+    
+    
+    
+    .btn.btn-info:hover, .btn-info:hover {
+      background-color: #87CEFA;
+      color: white;
+      border-color: none;
+    }
+    
+    .btn:focus {
+      box-shadow: none;
+    }
+    
+    
+    #post_href {
+        color:black;
+    }
+    
+    
+    
+      /* #header {
+        display: block;
+        height: 55px;
+        position: fixed;
+        border: 1px solid #eef2f8;
+        color: #88909a;
+        z-index: 100;
+        transition: all 0.3s;
+        width: 100%;
+        top: 0;
+    } */
+    
+    
+    
+    #header .header-title {
+        text-align: center;
+        font-size: 1.6rem;
+        line-height: 55px;
+        margin: 0;
+    }
+    
+    #blog {
+        position: absolute;
+    }
+    
+    
+#intro {
+    background-color: #DDD;
+    margin: 1em 1em 0 1em;
+    padding: .75em;
+    text-align: center;
+    border: 1px solid #CCC;
+    font-size: 18px;
+    }
+    #intro p {
+    margin: .3em 0 .3em 0;
+    }
