@@ -34,15 +34,16 @@
         padding-bottom: 30px;
     }
       
-    /* main content, on mobile*/
-    #main {
-        padding: 5px;
-        margin-left: 10px;
-        min-height: 100vh;
-        max-width: 100vw;
-        margin-bottom: 10px;
-        overflow: hidden;
-    }
+/* main content, on mobile*/
+#main {
+    padding: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    min-height: 100vh;
+    max-width: 100vw;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
     
     
     /* blog images: center and adjust height (especially for small screens). this
