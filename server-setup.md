@@ -175,3 +175,66 @@ server...
 sudo su - -c "R -e \"install.packages('ggplot2', repos='http://cran.rstudio.com/')\""
 ```
 
+## Configure Nginx as reverse proxy
+
+```
+sudo nano /etc/nginx/nginx.conf
+```
+
+Add this
+
+```
+http {
+    ...
+    # Map proxy settings for RStudio
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+}
+```
+
+## open default server block
+
+```
+sudo nano /etc/nginx/sites-enabled/default
+```
+
+https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean/#custom-domain
+https://www.digitalocean.com/community/tutorials/how-to-set-up-shiny-server-on-ubuntu-16-04
+
+add above server {...}
+```
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+```
+
+add directly below server_name _;
+```
+location /shiny/ {
+  proxy_pass http://127.0.0.1:3838/;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $connection_upgrade;
+  rewrite ^(/shiny/[^/]+)$ $1/ permanent;
+}
+```
+
+## restart **service**
+sudo service nginx restart
+
+## test:
+navigate to http://apps.hedleystirrat.co.nz/
+
+## Get a certificate
+
+### add certbot repository
+sudo add-apt-repository ppa:certbot/certbot
+
+### install certbot's nginx package
+sudo apt install python-certbot-nginx
+
+### obtain cert
+sudo certbot --nginx -d apps.hedleystirrat.co.nz
