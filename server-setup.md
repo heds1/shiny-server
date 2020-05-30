@@ -144,6 +144,7 @@ Go to 157.245.200.6:3838
 
 ## Clone the git repo into srv/shiny-server/
 
+https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean/#shiny-git
 
 
 ```
@@ -151,5 +152,26 @@ git config --global user.email "hedley.stirrat@gmail.com"
 git config --global user.name "heds1"
 
 cd /srv/shiny-server
-sudo git clone https://github.com/heds1/shinyapps.git
+sudo git init
 ```
+
+Create shiny-server repo in browser, then
+
+```
+git remote add origin https://github.com/heds1/shiny-server.git
+git add .
+git commit -m 'initial commit'
+git push -u origin master
+```
+
+TODO set up permissions so I don't have to sudo everything
+
+pull to local, add shiny app, push back to remote, pull down from remote to
+server...
+
+## Install ggplot2
+
+```
+sudo su - -c "R -e \"install.packages('ggplot2', repos='http://cran.rstudio.com/')\""
+```
+
