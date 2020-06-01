@@ -238,3 +238,18 @@ sudo apt install python-certbot-nginx
 
 ### obtain cert
 sudo certbot --nginx -d apps.hedleystirrat.co.nz
+
+
+
+
+
+## Install caret
+
+```
+sudo su - -c "R -e \"install.packages('caret', repos='http://cran.rstudio.com/')\""
+```
+
+sudo su - -c "R -e \"install.packages('randomForest',
+repos='http://cran.rstudio.com/')\""
+
+sudo su - -c "R -e \"install.packages('e1071', repos='http://cran.rstudio.com/')\""
