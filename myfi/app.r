@@ -6,28 +6,63 @@
 library(shiny)
 library(dplyr)
 library(ggplot2)
+library(lubridate)
 
 ui <- {
-	fluidPage(
+	fluidPage(title="FI/RE Calculator",
+		includeCSS('bootstrap.css'),
+		includeCSS('style.css'),
+		tags$head(`title`='Test'),
+		HTML('
+			<nav class="navbar navbar-expand-lg navbar-light bg-light">
+			<a class="navbar-brand" href="#">FI/RE Calculator</a>
+			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			<div class="collapse navbar-collapse" id="navbarSupportedContent">
+				<ul class="navbar-nav mr-auto">
+				<li class="nav-item active">
+					<a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="#">About</a>
+				</li>
+			</div>
+			</nav>
+		'),
+
 		sidebarLayout(
 			sidebarPanel(
-				h2('Summary'),
-				div(style="display: inline-flex;",
-					p(style="padding-right: 0.5rem;", 'Current net worth: '),
-					textOutput(outputId = 'current_nw')
-				),
-				div(style="display: inline-flex;",
-					p(style="padding-right: 0.5rem;", 'FI number: '),
-					textOutput(outputId = 'fi_number_sidebar')
+				h2(style="text-align:center;", 'Summary'),
+				hr(),
+				div(
+					div(id='summary-numbers',
+						p(id='summary-fonts', 'CURRENT NET WORTH: '),
+						div(style='font-weight:600;', textOutput(outputId = 'current_nw'))
+					)
 				),
 				div(
-					textOutput('fi_progress_text'),
-					uiOutput('fi_progress_bar')	
+					div(id='summary-numbers',
+					p(id='summary-fonts', 'FI NUMBER: '),
+					div(style='font-weight:600;', textOutput(outputId = 'fi_number_sidebar'))
+					)	
+				),
+				div(id='summary-numbers',
+					p(id='summary-fonts', "PREDICTED RETIREMENT YEAR: "),
+					div(style='font-weight:600', textOutput('projected_fi_year'))
+				),
+				br(),
+				uiOutput('fi_progress_bar'),
+				div(id='summary-fonts', style="text-align: center;",
+					textOutput('fi_progress_text')
 				)
+				
+				
 				
 			),
 			mainPanel(
-				tabsetPanel(
+				tabsetPanel(type="pill",
 					tabPanel(
 						'Your FI numbers',
 						p('Calculate your FI number here'),
@@ -73,29 +108,15 @@ ui <- {
 						plotOutput(
 							'years_to_retirement_plot'
 						)
+					),
+					tabPanel(
+						'Goals'
 					)
 				)
 			)
 		)	
 	)
 }
-
-# compound_interest <- function(rate, years, initial, injection) {
-# 	# rate = interest rate as decimal (p.a.)
-# 	# years = number of years to compound
-# 	# initial = initial investment
-# 	# injection = extra savings each year
-# 	total <- initial
-
-# 	for (year in 1:years) {
-
-# 		total <- total + rate * total + injection
-	
-# 	}
-
-# 	return (total)
-
-# }
 
 # function to calculate number of years until retirement
 cmpd_interest_until_target <- function(rate, initial, target, injection) {
@@ -141,10 +162,20 @@ server <- function(input, output, session) {
 		return(list(years=years, plot = plt))
 	})
 
-	# output text of years to retirement
-	output$years_to_retirement_text <- renderText({
-		paste0("With the above settings, you will be able to retire in ", years_to_retirement()$years, " years!")
+	# set predicted retirement year
+	predicted_retirement_year <- reactive({
+		year(Sys.time()) + years_to_retirement()$year
+	})
+
+	# output text of years to financial independence
+	output$fi_progress_summary <- renderText({
+		paste0("With the above settings, you will be financially independent in the year ", predicted_retirement_year())
 	}) 
+
+	# output text of years to retirement for summary
+	output$projected_fi_year <- renderText({
+		predicted_retirement_year()
+	})
 
 	# output plot of years to retirement
 	output$years_to_retirement_plot <- renderPlot({
@@ -163,7 +194,7 @@ server <- function(input, output, session) {
 
 	# render FI progress text
 	output$fi_progress_text <- renderText({
-		paste0("You are ", percent_fi(), "% financially independent.")
+		paste0("YOU ARE ", percent_fi(), "% FINANCIALLY INDEPENDENT")
 	})
 
 	# render bootstrap progress bar
@@ -172,7 +203,7 @@ server <- function(input, output, session) {
 		# generate HTML for progress bar
 		HTML(
 			paste0(
-				"<div class=\"progress\">
+				"<div class=\"progress\" style=\"height: 30px;\">
 					<div class=\"progress-bar\" role=\"progressbar\" style=\"width: ", percent_fi(), "%\" aria-valuenow=\"", percent_fi(), "\" aria-valuemax=\"100\" 
 				 </div>"
 			)
@@ -199,45 +230,5 @@ server <- function(input, output, session) {
 
 }
 
+# shinyApp(ui = htmlTemplate("c:/users/hls/code/shiny-server/myfi/www/index.html"), server)
 shinyApp(ui, server)
-
-
-
-
-
-
-# # assume
-# #	end of 2021: age = 30, net worth = 40,000
-# #	long-term interest returns after fees and tax and inflation = 5%
-# #	injection of 40,000 savings each year
-
-# compound_interest(0.06, 20, 40000, 40000)
-# # [1] 1599709
-
-# # this is close to 1,666,667 which is a target of $50,000 withdrawal per year
-# # using SWR of 3%
-
-
-# test <- function(target,)
-
-
-# # current value of property if paid off
-# rv <- 300000
-# # income generated from property (gross)
-# gross_income <- 15000
-
-# # gross-to-net factor (% of gross that becomes net)
-# gnet_factor <- .5
-
-# net_income <- gnet_factor * gross_income
-
-# # SWR
-# swr <- 0.035
-
-# # property's equivalent contribution to required equity position at retirement,
-# # based on swr
-# property_contrib <- net_income / swr
-
-
-
-# test(target = 1700000)
