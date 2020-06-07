@@ -84,15 +84,13 @@ sudo -i R
 
 https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-18-04
 
-### Install it
+Install it:
 
 ```
 sudo apt install nginx
 ```
 
-### Adjust firewall
-
-enable http and https on 80 and 443
+Adjust firewall (enable HTTP and HTTPS on 80 and 443, respectively)
 
 ```
 sudo ufw allow 'Nginx Full'
@@ -108,44 +106,41 @@ sudo su - -c "R -e \"install.packages('shiny', repos='http://cran.rstudio.com/')
 
 https://rstudio.com/products/shiny/download-server/ubuntu/
 
-### Install GDebi which installs local deb packages
+Install GDebi which installs local deb packages:
 
 ```
 sudo apt-get install gdebi-core
 ```
 
-### Download Shiny Server
+Download Shiny Server:
 
 ```
 wget https://download3.rstudio.org/ubuntu-14.04/x86_64/shiny-server-1.5.13.944-amd64.deb
 ```
 
-### Install Shiny Server
+Install Shiny Server:
 
 ```
 sudo gdebi shiny-server-1.5.13.944-amd64.deb
 ```
 
-## Check that Shiny Server is listening on port 3838
+Check that Shiny Server is listening on port 3838:
 
 ```
 sudo netstat -plunt | grep -i shiny
 ```
 
-## Allow traffic through to Shiny Server
+Allow traffic through to Shiny Server:
 
 ```
 sudo ufw allow 3838
 ```
 
-## Verify it's working
-
-Go to 157.245.200.6:3838
+Verify it's working by going to 157.245.200.6:3838
 
 ## Clone the git repo into srv/shiny-server/
 
 https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean/#shiny-git
-
 
 ```
 git config --global user.email "hedley.stirrat@gmail.com"
@@ -169,11 +164,7 @@ TODO set up permissions so I don't have to sudo everything
 pull to local, add shiny app, push back to remote, pull down from remote to
 server...
 
-## Install ggplot2
 
-```
-sudo su - -c "R -e \"install.packages('ggplot2', repos='http://cran.rstudio.com/')\""
-```
 
 ## Configure Nginx as reverse proxy
 
@@ -222,34 +213,54 @@ location /shiny/ {
 }
 ```
 
-## restart **service**
+Restart **service**
 sudo service nginx restart
 
-## test:
-navigate to http://apps.hedleystirrat.co.nz/
+Test, navigate to http://apps.hedleystirrat.co.nz/
 
 ## Get a certificate
 
-### add certbot repository
+Add certbot repository:
+
+```
 sudo add-apt-repository ppa:certbot/certbot
+```
 
-### install certbot's nginx package
+Install certbot's nginx package:
+
+```
 sudo apt install python-certbot-nginx
+```
 
-### obtain cert
+Obtain certificate:
+
+```
 sudo certbot --nginx -d apps.hedleystirrat.co.nz
+```
 
 
+## Install other packages
 
+### ggplot2
 
+```
+sudo su - -c "R -e \"install.packages('ggplot2', repos='http://cran.rstudio.com/')\""
+```
 
-## Install caret
+### caret and other ML packages
 
 ```
 sudo su - -c "R -e \"install.packages('caret', repos='http://cran.rstudio.com/')\""
-```
 
-sudo su - -c "R -e \"install.packages('randomForest',
-repos='http://cran.rstudio.com/')\""
+sudo su - -c "R -e \"install.packages('randomForest', repos='http://cran.rstudio.com/')\""
 
 sudo su - -c "R -e \"install.packages('e1071', repos='http://cran.rstudio.com/')\""
+```
+
+### 7 June 2020 lubridate, dplyr
+
+```
+sudo su - -c "R -e \"install.packages('lubridate', repos='http://cran.rstudio.com/')\""
+
+sudo su - -c "R -e \"install.packages('dplyr', repos='http://cran.rstudio.com/')\""
+```
