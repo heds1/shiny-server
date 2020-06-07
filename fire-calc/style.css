@@ -1,0 +1,107 @@
+
+/* STYLES FROM 700-1000px */
+@media (min-width: 700px) and (max-width: 1000px) {
+    body {
+        margin-left: 7%; 
+        margin-right: 7%;
+        min-height: 100vh;
+	}
+}
+
+/* STYLES FROM 1001-1200px */
+@media (min-width: 1001px) and (max-width: 1200px) {
+    body {
+        margin-left: 12%; 
+        margin-right: 12%;
+        min-height: 100vh;
+	}
+}
+
+/* STYLES FROM 1201px upward */
+@media (min-width: 1201px) {
+    body {
+        margin-left: 18%; 
+        margin-right: 18%;
+        min-height: 100vh;
+	}
+}
+
+/* set style for About intro */
+#intro {
+    background-color: #DDD;
+    margin: 1em 0 1em 0;
+    padding: .75em;
+    text-align: center;
+    border: 1px solid #CCC;
+    font-size: 18px;
+}
+
+#intro p {
+    margin: .3em 0 .3em 0;
+}
+
+/* set default font size */
+html {
+    font-size: 16px;
+}
+
+.navbar-default .navbar-brand {
+    color: black;
+}
+
+/* remove default padding */
+.container-fluid {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+.navbar-default .navbar-nav>.active>a {
+    background-color: #72a98f !important;
+}
+
+
+div.navbar-header {
+    padding: 1rem;
+}
+
+body > nav > div > ul {
+    padding: 1rem;
+    font-size: 16px;
+}
+
+.navbar-default .navbar-brand:focus, .navbar-default .navbar-brand:hover {
+    color: black;
+}
+
+/* remove border edges in navbar */
+@media (min-width: 768px) {
+    .navbar {
+        border-radius: 0px;
+    }
+}
+
+/* set navbar background color */
+.bg-light {
+    background-color: #72a98f !important;
+}
+
+.navbar-default {
+    background-color: #72a98f !important;
+}
+
+/* set font styles for summary well */
+#summary-fonts {
+    font-weight: lighter;
+    padding-right: 0.5rem;
+}
+
+/* center navbar */
+.navbar-brand {
+    height: auto !important;
+}
+
+/* center and inline summary numbers */
+#summary-numbers {
+    display: inline-flex;
+    align-items: baseline;
+}
