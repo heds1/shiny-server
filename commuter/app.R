@@ -5,6 +5,7 @@ library(proj4)
 library(tidyr)
 library(sp)
 library(maptools)
+library(ggplot2)
 
 points_to_line <- function(data, long, lat, id_field = NULL, sort_field = NULL) {
 
@@ -83,47 +84,59 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 			Ferry,
 			Other),
 		names_to = 'CommuteType') %>%
-	filter(value != -999) %>% # -999 is suppressed data for confidentiality
-	sample_n(size = 5000)
+	filter(value != -999) #%>% # -999 is suppressed data for confidentiality
+	#sample_n(size = 5000)
 
-# comm_summ <- df %>%
-# 	group_by(CommuteType) %>%
-# 	summarise(totals = sum(value)) %>%
-# 	arrange(desc(totals))
+comm_summ <- df %>%
+	group_by(CommuteType) %>%
+	summarise(totals = sum(value)) %>%
+	mutate(percent = totals / sum(totals) * 100) %>%
+	arrange(desc(percent))
 
-test <- df %>% mutate(id = 1:nrow(.)) %>%
-	pivot_longer(cols = c(WorkplaceLong, ResidenceLong), names_to = 'Status', values_to='Lng') %>%
-	pivot_longer(cols = c(WorkplaceLat, ResidenceLat), names_to = 'Status2', values_to='Lat') %>%
-	filter(case_when(
-		grepl('Workplace', Status) & grepl('Workplace', Status2) |
-		grepl('Residence', Status) & grepl('Residence', Status2) ~ TRUE,
-		TRUE ~ FALSE
+# test <- df %>% mutate(id = 1:nrow(.)) %>%
+# 	pivot_longer(cols = c(WorkplaceLong, ResidenceLong), names_to = 'Status', values_to='Lng') %>%
+# 	pivot_longer(cols = c(WorkplaceLat, ResidenceLat), names_to = 'Status2', values_to='Lat') %>%
+# 	filter(case_when(
+# 		grepl('Workplace', Status) & grepl('Workplace', Status2) |
+# 		grepl('Residence', Status) & grepl('Residence', Status2) ~ TRUE,
+# 		TRUE ~ FALSE
 
-	))
+# 	))
 
-df2 <- points_to_line(test, 'Lng', 'Lat', 'id')
+# df2 <- points_to_line(test, 'Lng', 'Lat', 'id')
 
-leaflet() %>% addTiles() %>% addPolylines(data=df2)
+# leaflet() %>% addTiles() %>% addPolylines(data=df2)
 
 commute_types <- unique(df$CommuteType)
 
 ui <- {
-  fluidPage(
-    sidebarLayout(
-      sidebarPanel(
-        h2('sidebar'),
-		selectizeInput('commute_types',
-			'Commute type',
-			choices = commute_types, 
-			multiple = TRUE,
-			selected = 'Public_bus')
-      ),
-      mainPanel(
-        leafletOutput('map')
-      )
-      
-    )
-  )
+	tagList(
+		navbarPage(
+			title="Commuter",
+			tabPanel("Map",
+				sidebarLayout(
+					sidebarPanel(
+						h2('sidebar'),
+						selectizeInput('commute_types',
+							'Commute type',
+							choices = commute_types, 
+							multiple = TRUE,
+							selected = 'Public_bus')
+      				),
+					mainPanel(
+						leafletOutput('map')
+					)
+    			)
+			),
+			tabPanel("Graphs",
+				tabsetPanel(
+					tabPanel('Commute types',
+						plotOutput('commute_types_bar')),
+					tabPanel('Graph2')
+				)),
+			tabPanel("About")
+		)
+	)
 }
 
 server <- function(input, output, session) {
@@ -139,7 +152,7 @@ server <- function(input, output, session) {
     	this_map <- leaflet(map_data()) %>%
       		addTiles() # %>%
 
-		this_map %>% addPolylines(t2)
+		# this_map %>% addPolylines(t2)
 
 
 		# addCircleMarkers(~WorkplaceLong, ~WorkplaceLat,
@@ -155,8 +168,17 @@ server <- function(input, output, session) {
 
 		this_map
     
-  })
-  
+	})
+
+	output$commute_types_bar <- renderPlot({
+
+		ggplot(comm_summ, aes(x = CommuteType, y = percent)) +
+			geom_col() +
+			scale_x_discrete(limits = rev(comm_summ$CommuteType)) +
+			coord_flip()
+
+	})
+	
 }
 
 shinyApp(ui, server)
