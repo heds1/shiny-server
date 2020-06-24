@@ -7,46 +7,6 @@ library(sp)
 library(maptools)
 library(ggplot2)
 
-points_to_line <- function(data, long, lat, id_field = NULL, sort_field = NULL) {
-
-  # Convert to SpatialPointsDataFrame
-  coordinates(data) <- c(long, lat)
-
-  # If there is a sort field...
-  if (!is.null(sort_field)) {
-    if (!is.null(id_field)) {
-      data <- data[order(data[[id_field]], data[[sort_field]]), ]
-    } else {
-      data <- data[order(data[[sort_field]]), ]
-    }
-  }
-
-  # If there is only one path...
-  if (is.null(id_field)) {
-
-    lines <- SpatialLines(list(Lines(list(Line(data)), "id")))
-
-    return(lines)
-
-    # Now, if we have multiple lines...
-  } else if (!is.null(id_field)) {  
-
-    # Split into a list by ID field
-    paths <- sp::split(data, data[[id_field]])
-
-    sp_lines <- SpatialLines(list(Lines(list(Line(paths[[1]])), "line1")))
-
-    # I like for loops, what can I say...
-    for (p in 2:length(paths)) {
-      id <- paste0("line", as.character(p))
-      l <- SpatialLines(list(Lines(list(Line(paths[[p]])), id)))
-      sp_lines <- spRbind(sp_lines, l)
-    }
-
-    return(sp_lines)
-  }
-}
-
 # set up parameters for coordinate conversion (NZTM --> NZGD)
 proj4_params <- "+proj=tmerc +lat_0=0.0 +lon_0=173.0 +k=0.9996 +x_0=1600000.0 +y_0=10000000.0 +datum=WGS84 +units=m"
 
@@ -84,8 +44,25 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 			Ferry,
 			Other),
 		names_to = 'CommuteType') %>%
-	filter(value != -999) #%>% # -999 is suppressed data for confidentiality
-	#sample_n(size = 5000)
+	# -999 is suppressed data for confidentiality
+	filter(value != -999) %>%
+	# threshold the counts into bins so we can pass a weight to addPolylines
+	mutate(
+		wt = case_when(
+			value <10 ~ 1,
+			value >=10 & value <20 ~ 2,
+			value >=20 & value <30 ~ 3,
+			value >=30 & value <40 ~ 4,
+			value >=40 & value <50 ~ 5,
+			value >50 ~ 6))
+
+test <- Bicycle_lines[1000:1006,]
+
+leaflet() %>% addTiles() %>%
+	addPolylines(data = test, weight = c(1, 6))
+
+# split weights into list of dfs so we can get appropriate vals
+line_weight_list <- df %>% select(CommuteType, wt) %>% group_by(CommuteType) %>% group_split()
 
 # split types into list of dfs so we can create layers
 commute_type_list <- df %>% group_by(CommuteType) %>% group_split()
@@ -121,11 +98,17 @@ create_polyline_matrix <- function(data) {
 
 }
 
+# create all the matrices
 for (commute_type in commute_type_keys$CommuteType) {
 	this_type_data <- commute_type_list[[grep(commute_type, commute_type_keys$CommuteType)]]
 	this_mat <- create_polyline_matrix(this_type_data)
 	assign(paste0(commute_type, '_lines'), this_mat, envir = .GlobalEnv)
 }
+
+# we need to set the line weights to be between 1-5. so do some thresholding of
+# the values.
+
+
 
 # for (commute_type in commute_type_keys$CommuteType) {
 # 	print(paste0(commute_type, '_lines'))
@@ -152,24 +135,6 @@ for (commute_type in commute_type_keys$CommuteType) {
 # bus_lines <- create_polyline_matrix(bus)
 #other_lines <- create_polyline_matrix(other)
 
-leaflet() %>%
-	addTiles() %>%
-	addPolylines(data = Bicycle_lines, group = 'bicycle', color = 'blue') %>%
-	addPolylines(data = Train_lines, group = 'train', color = 'blue') %>%
-	addPolylines(data = Public_bus_lines, group = 'bus', color = 'blue') %>%
-	addPolylines(data = Drive_a_company_car_truck_or_van_lines, group = 'company_vehicle', color = 'blue') %>%
-	addPolylines(data = Drive_a_private_car_truck_or_van_lines, group = 'private_vehicle', color = 'blue') %>%
-	addPolylines(data = Passenger_in_a_car_truck_van_or_company_bus_lines, group = 'private_passenger', color = 'blue') %>%
-	addPolylines(data = Walk_or_jog_lines, group = 'walk_or_jog', color = 'blue') %>%
-	addPolylines(data = Ferry_lines, group = 'ferry', color = 'blue') %>%
-	#addPolylines(data = bus_lines, group = 'bus', color = 'purple') %>%
-
-	# to control layers
-	addLayersControl(
-		#baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
-		overlayGroups = c("bicycle", "train", "bus", "company_vehicle", "private_vehicle", "private_passenger", "walk_or_jog", "ferry"),
-		options = layersControlOptions(collapsed = FALSE)
-	)
 
 comm_summ <- df %>%
 	group_by(CommuteType) %>%
@@ -189,24 +154,26 @@ comm_summ <- df %>%
 
 # as.numeric(c(df[1,1], df[1,2], NA, NA, df[1,3], df[1,4]))
 
-pre_matrix_dat <- c()
-matrix_df <- data.frame(v1,v2)
+# pre_matrix_dat <- c()
+# matrix_df <- data.frame(v1,v2)
 
-for (row in 50000:59000) {
+# for (row in 50000:59000) {
 
-	pre_matrix_dat <- c(pre_matrix_dat, as.numeric(c(df[row,1], df[row,2], df[row,3], df[row,4], NA, NA)))
+# 	pre_matrix_dat <- c(pre_matrix_dat, as.numeric(c(df[row,1], df[row,2], df[row,3], df[row,4], NA, NA)))
 	
 
+# }
+
+# my_matrix <- matrix(data = pre_matrix_dat, ncol=2, byrow=TRUE)
+# my_matrix_df <- as.data.frame(my_matrix)
+
+# function to get line weights
+get_line_weights <- function(commute_type) {
+	return (line_weight_list[[grep(commute_type, commute_type_keys, ignore.case = TRUE)]]$wt)
 }
 
-my_matrix <- matrix(data = pre_matrix_dat, ncol=2, byrow=TRUE)
-my_matrix_df <- as.data.frame(my_matrix)
 
-# df2 <- points_to_line(test, 'Lng', 'Lat', 'id')
-
-# leaflet() %>% addTiles() %>% addPolylines(data=df2)
-
-commute_types <- unique(df$CommuteType)
+# commute_types <- unique(df$CommuteType)
 
 ui <- {
 	tagList(
@@ -216,16 +183,12 @@ ui <- {
 				sidebarLayout(
 					sidebarPanel(
 						h2('sidebar'),
-						selectizeInput('commute_types',
-							'Commute type',
-							choices = commute_types, 
-							multiple = TRUE,
-							selected = 'Public_bus')
-      				),
+					),
 					mainPanel(
-						leafletOutput('map')
+						leafletOutput('map', height = '90vh')
 					)
     			)
+				
 			),
 			tabPanel("Graphs",
 				tabsetPanel(
@@ -248,24 +211,47 @@ server <- function(input, output, session) {
 
   	output$map <- renderLeaflet({
 
-    	this_map <- leaflet(map_data()) %>%
-      		addTiles() # %>%
+		leaflet(options = leafletOptions(minZoom = 4)) %>%
+			addTiles() %>%
+    		setView(174,-42,5) %>%
+			addPolylines(data = Bicycle_lines, group = 'bicycle', color = 'blue', weight = get_line_weights('bicycle')) %>%
+			addPolylines(data = Train_lines, group = 'train', color = 'blue', weight = get_line_weights('train')) %>%
+			addPolylines(data = Public_bus_lines, group = 'bus', color = 'blue', weight = get_line_weights('bus')) %>%
+			# addPolylines(data = Drive_a_company_car_truck_or_van_lines, group = 'company_vehicle', color = 'blue') %>%
+			# addPolylines(data = Drive_a_private_car_truck_or_van_lines, group = 'private_vehicle', color = 'blue') %>%
+			# addPolylines(data = Passenger_in_a_car_truck_van_or_company_bus_lines, group = 'private_passenger', color = 'blue') %>%
+			# addPolylines(data = Walk_or_jog_lines, group = 'walk_or_jog', color = 'blue') %>%
+			# addPolylines(data = Ferry_lines, group = 'ferry', color = 'blue') %>%
+			# addPolylines(data = Public_bus_lines, group = 'bus', color = 'purple') %>%
 
-		# this_map %>% addPolylines(t2)
+			# to control layers
+			addLayersControl(
+				#baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+				overlayGroups = c("bicycle", "train", "bus", "company_vehicle", "private_vehicle", "private_passenger", "walk_or_jog", "ferry"),
+				options = layersControlOptions(collapsed = FALSE)) %>%
+
+			# hide most layers on startup
+			hideGroup(c("train", "bus", "company_vehicle", "private_vehicle", "private_passenger", "walk_or_jog", "ferry"))
 
 
-		# addCircleMarkers(~WorkplaceLong, ~WorkplaceLat,
-		#                  stroke=FALSE, fillOpacity=0.1)
-		# fitBounds(172,-35,178,-45)
+    	# this_map <- leaflet(map_data()) %>%
+      	# 	addTiles() # %>%
 
-		for (i in 1:nrow(map_data())) {
-			this_map <- addPolylines(this_map,
-				lat = as.numeric(map_data()[i, c('WorkplaceLat', 'ResidenceLat')]),
-				lng = as.numeric(map_data()[i, c('WorkplaceLong', 'ResidenceLong')]),
-				weight = map_data()[i, 'value'])
-		}
+		# # this_map %>% addPolylines(t2)
 
-		this_map
+
+		# # addCircleMarkers(~WorkplaceLong, ~WorkplaceLat,
+		# #                  stroke=FALSE, fillOpacity=0.1)
+		# # fitBounds(172,-35,178,-45)
+
+		# for (i in 1:nrow(map_data())) {
+		# 	this_map <- addPolylines(this_map,
+		# 		lat = as.numeric(map_data()[i, c('WorkplaceLat', 'ResidenceLat')]),
+		# 		lng = as.numeric(map_data()[i, c('WorkplaceLong', 'ResidenceLong')]),
+		# 		weight = map_data()[i, 'value'])
+		# }
+
+		# this_map
     
 	})
 
