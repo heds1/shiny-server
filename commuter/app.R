@@ -87,6 +87,90 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 	filter(value != -999) #%>% # -999 is suppressed data for confidentiality
 	#sample_n(size = 5000)
 
+# split types into list of dfs so we can create layers
+commute_type_list <- df %>% group_by(CommuteType) %>% group_split()
+
+# get group keys
+commute_type_keys <- df %>% group_by(CommuteType) %>% group_keys()
+
+# to get index, can use group keys like this:
+grep('Bicycle', commute_type_keys$CommuteType)
+# [1] 1
+
+# e.g., 
+# bicycle <- commute_type_list[[grep('Bicycle', commute_type_keys$CommuteType)]]
+# train <- commute_type_list[[grep('Train', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+# company_vehicle <- commute_type_list[[grep('Drive_a_company_car_truck_or_van', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+# private_vehicle <- commute_type_list[[grep('Drive_a_private_car_truck_or_van', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+# other <- commute_type_list[[grep('Other', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+# private_passenger <- commute_type_list[[grep('Passenger_in_a_car_truck_van_or_company_bus', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+# bus <- commute_type_list[[grep('Public_bus', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+# walk_or_jog <- commute_type_list[[grep('Walk_or_jog', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+# ferry <- commute_type_list[[grep('ferry', commute_type_keys$CommuteType, ignore.case = TRUE)]]
+
+# function to create a matrix suitable for passing to addPolylines
+create_polyline_matrix <- function(data) {
+
+	data_vector <- c()
+
+	for (row in 1:nrow(data)) {
+		data_vector <- c(data_vector, as.numeric(c(data[row,1], data[row,2], data[row,3], data[row,4], NA, NA)))
+	}
+
+	return (matrix(data = data_vector, ncol = 2, byrow = TRUE))
+
+}
+
+for (commute_type in commute_type_keys$CommuteType) {
+	this_type_data <- commute_type_list[[grep(commute_type, commute_type_keys$CommuteType)]]
+	this_mat <- create_polyline_matrix(this_type_data)
+	assign(paste0(commute_type, '_lines'), this_mat, envir = .GlobalEnv)
+}
+
+# for (commute_type in commute_type_keys$CommuteType) {
+# 	print(paste0(commute_type, '_lines'))
+# }
+
+# "Bicycle_lines"
+# [1] "Drive_a_company_car_truck_or_van_lines"
+# [1] "Drive_a_private_car_truck_or_van_lines"
+# [1] "Ferry_lines"
+# [1] "Other_lines"
+# [1] "Passenger_in_a_car_truck_van_or_company_bus_lines"
+# [1] "Public_bus_lines"
+# [1] "Train_lines"
+# [1] "Walk_or_jog_lines"
+# [1] "Work_at_home_lines"
+
+# bike_lines <- create_polyline_matrix(bicycle)
+# train_lines <- create_polyline_matrix(train)
+# company_vehicle_lines <- create_polyline_matrix(company_vehicle)
+# private_vehicle_lines <- create_polyline_matrix(private_vehicle)
+# private_passenger_lines <- create_polyline_matrix(private_passenger)
+# walk_or_jog_lines <- create_polyline_matrix(walk_or_jog)
+# ferry_lines <- create_polyline_matrix(ferry)
+# bus_lines <- create_polyline_matrix(bus)
+#other_lines <- create_polyline_matrix(other)
+
+leaflet() %>%
+	addTiles() %>%
+	addPolylines(data = Bicycle_lines, group = 'bicycle', color = 'blue') %>%
+	addPolylines(data = Train_lines, group = 'train', color = 'blue') %>%
+	addPolylines(data = Public_bus_lines, group = 'bus', color = 'blue') %>%
+	addPolylines(data = Drive_a_company_car_truck_or_van_lines, group = 'company_vehicle', color = 'blue') %>%
+	addPolylines(data = Drive_a_private_car_truck_or_van_lines, group = 'private_vehicle', color = 'blue') %>%
+	addPolylines(data = Passenger_in_a_car_truck_van_or_company_bus_lines, group = 'private_passenger', color = 'blue') %>%
+	addPolylines(data = Walk_or_jog_lines, group = 'walk_or_jog', color = 'blue') %>%
+	addPolylines(data = Ferry_lines, group = 'ferry', color = 'blue') %>%
+	#addPolylines(data = bus_lines, group = 'bus', color = 'purple') %>%
+
+	# to control layers
+	addLayersControl(
+		#baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+		overlayGroups = c("bicycle", "train", "bus", "company_vehicle", "private_vehicle", "private_passenger", "walk_or_jog", "ferry"),
+		options = layersControlOptions(collapsed = FALSE)
+	)
+
 comm_summ <- df %>%
 	group_by(CommuteType) %>%
 	summarise(totals = sum(value)) %>%
@@ -99,9 +183,24 @@ comm_summ <- df %>%
 # 	filter(case_when(
 # 		grepl('Workplace', Status) & grepl('Workplace', Status2) |
 # 		grepl('Residence', Status) & grepl('Residence', Status2) ~ TRUE,
-# 		TRUE ~ FALSE
+# 		TRUE ~ FALSE)) %>%
+# 	mutate()
 
-# 	))
+
+# as.numeric(c(df[1,1], df[1,2], NA, NA, df[1,3], df[1,4]))
+
+pre_matrix_dat <- c()
+matrix_df <- data.frame(v1,v2)
+
+for (row in 50000:59000) {
+
+	pre_matrix_dat <- c(pre_matrix_dat, as.numeric(c(df[row,1], df[row,2], df[row,3], df[row,4], NA, NA)))
+	
+
+}
+
+my_matrix <- matrix(data = pre_matrix_dat, ncol=2, byrow=TRUE)
+my_matrix_df <- as.data.frame(my_matrix)
 
 # df2 <- points_to_line(test, 'Lng', 'Lat', 'id')
 
