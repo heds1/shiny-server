@@ -3,9 +3,11 @@ library(dplyr)
 library(leaflet)
 library(proj4)
 library(tidyr)
-library(sp)
-library(maptools)
+#library(sp)
+#library(maptools)
 library(ggplot2)
+library(shinycssloaders)
+library(shinyjs)
 
 # set up parameters for coordinate conversion (NZTM --> NZGD)
 proj4_params <- "+proj=tmerc +lat_0=0.0 +lon_0=173.0 +k=0.9996 +x_0=1600000.0 +y_0=10000000.0 +datum=WGS84 +units=m"
@@ -56,10 +58,10 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 			value >=40 & value <50 ~ 5,
 			value >50 ~ 6))
 
-test <- Bicycle_lines[1000:1006,]
+# test <- Bicycle_lines[1000:1006,]
 
-leaflet() %>% addTiles() %>%
-	addPolylines(data = test, weight = c(1, 6))
+# leaflet() %>% addTiles() %>%
+# 	addPolylines(data = test, weight = c(1, 6))
 
 # split weights into list of dfs so we can get appropriate vals
 line_weight_list <- df %>% select(CommuteType, wt) %>% group_by(CommuteType) %>% group_split()
@@ -105,42 +107,7 @@ for (commute_type in commute_type_keys$CommuteType) {
 	assign(paste0(commute_type, '_lines'), this_mat, envir = .GlobalEnv)
 }
 
-# we need to set the line weights to be between 1-5. so do some thresholding of
-# the values.
 
-
-
-# for (commute_type in commute_type_keys$CommuteType) {
-# 	print(paste0(commute_type, '_lines'))
-# }
-
-# "Bicycle_lines"
-# [1] "Drive_a_company_car_truck_or_van_lines"
-# [1] "Drive_a_private_car_truck_or_van_lines"
-# [1] "Ferry_lines"
-# [1] "Other_lines"
-# [1] "Passenger_in_a_car_truck_van_or_company_bus_lines"
-# [1] "Public_bus_lines"
-# [1] "Train_lines"
-# [1] "Walk_or_jog_lines"
-# [1] "Work_at_home_lines"
-
-# bike_lines <- create_polyline_matrix(bicycle)
-# train_lines <- create_polyline_matrix(train)
-# company_vehicle_lines <- create_polyline_matrix(company_vehicle)
-# private_vehicle_lines <- create_polyline_matrix(private_vehicle)
-# private_passenger_lines <- create_polyline_matrix(private_passenger)
-# walk_or_jog_lines <- create_polyline_matrix(walk_or_jog)
-# ferry_lines <- create_polyline_matrix(ferry)
-# bus_lines <- create_polyline_matrix(bus)
-#other_lines <- create_polyline_matrix(other)
-
-
-comm_summ <- df %>%
-	group_by(CommuteType) %>%
-	summarise(totals = sum(value)) %>%
-	mutate(percent = totals / sum(totals) * 100) %>%
-	arrange(desc(percent))
 
 # test <- df %>% mutate(id = 1:nrow(.)) %>%
 # 	pivot_longer(cols = c(WorkplaceLong, ResidenceLong), names_to = 'Status', values_to='Lng') %>%
@@ -177,12 +144,25 @@ get_line_weights <- function(commute_type) {
 
 ui <- {
 	tagList(
+		useShinyjs(),
+		tags$head(
+			tags$style(
+				'.shiny-notification{
+					position: fixed;
+					top: 33%;
+					left: 33%;
+					right: 33%;'
+
+			)
+		),
 		navbarPage(
-			title="Commuter",
+			
+			title="There and Back Again",
 			tabPanel("Map",
 				sidebarLayout(
 					sidebarPanel(
-						h2('sidebar'),
+						h2('How Aotearoa Gets to Work', class="display-2"),
+						actionButton('load_data','Get started!')
 					),
 					mainPanel(
 						leafletOutput('map', height = '90vh')
@@ -193,7 +173,7 @@ ui <- {
 			tabPanel("Graphs",
 				tabsetPanel(
 					tabPanel('Commute types',
-						plotOutput('commute_types_bar')),
+						plotOutput('commute_types_bar')) %>% withSpinner(),
 					tabPanel('Graph2')
 				)),
 			tabPanel("About")
@@ -209,53 +189,67 @@ server <- function(input, output, session) {
 		)
 	})
 
+	# the strategy is to just load the base map on instantiation. layers can be
+	# added by proxy, so that server load is not front-loaded.
   	output$map <- renderLeaflet({
 
 		leaflet(options = leafletOptions(minZoom = 4)) %>%
 			addTiles() %>%
-    		setView(174,-42,5) %>%
-			addPolylines(data = Bicycle_lines, group = 'bicycle', color = 'blue', weight = get_line_weights('bicycle')) %>%
-			addPolylines(data = Train_lines, group = 'train', color = 'blue', weight = get_line_weights('train')) %>%
-			addPolylines(data = Public_bus_lines, group = 'bus', color = 'blue', weight = get_line_weights('bus')) %>%
-			# addPolylines(data = Drive_a_company_car_truck_or_van_lines, group = 'company_vehicle', color = 'blue') %>%
-			# addPolylines(data = Drive_a_private_car_truck_or_van_lines, group = 'private_vehicle', color = 'blue') %>%
-			# addPolylines(data = Passenger_in_a_car_truck_van_or_company_bus_lines, group = 'private_passenger', color = 'blue') %>%
-			# addPolylines(data = Walk_or_jog_lines, group = 'walk_or_jog', color = 'blue') %>%
-			# addPolylines(data = Ferry_lines, group = 'ferry', color = 'blue') %>%
-			# addPolylines(data = Public_bus_lines, group = 'bus', color = 'purple') %>%
+    		setView(174,-41.2,6) %>%
 
 			# to control layers
 			addLayersControl(
 				#baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
-				overlayGroups = c("bicycle", "train", "bus", "company_vehicle", "private_vehicle", "private_passenger", "walk_or_jog", "ferry"),
+				overlayGroups = c("Bicycle", "Train", "Bus", "Company vehicle", "Private vehicle", "Private passenger", "Walk or jog", "Ferry"),
 				options = layersControlOptions(collapsed = FALSE)) %>%
 
 			# hide most layers on startup
-			hideGroup(c("train", "bus", "company_vehicle", "private_vehicle", "private_passenger", "walk_or_jog", "ferry"))
-
-
-    	# this_map <- leaflet(map_data()) %>%
-      	# 	addTiles() # %>%
-
-		# # this_map %>% addPolylines(t2)
-
-
-		# # addCircleMarkers(~WorkplaceLong, ~WorkplaceLat,
-		# #                  stroke=FALSE, fillOpacity=0.1)
-		# # fitBounds(172,-35,178,-45)
-
-		# for (i in 1:nrow(map_data())) {
-		# 	this_map <- addPolylines(this_map,
-		# 		lat = as.numeric(map_data()[i, c('WorkplaceLat', 'ResidenceLat')]),
-		# 		lng = as.numeric(map_data()[i, c('WorkplaceLong', 'ResidenceLong')]),
-		# 		weight = map_data()[i, 'value'])
-		# }
-
-		# this_map
+			hideGroup(c("Bicycle", "Train", "Company vehicle", "Private vehicle", "Private passenger", "Walk or jog", "Ferry"))
     
 	})
 
+	# add layers
+	observeEvent(input$load_data, {
+		shinyjs::disable('load_data')
+		withProgress(message = 'Loading data...', value = 0, {
+			n <- 8
+			incProgress(1/n, "Loading bicycles...")
+			map <- leafletProxy("map") %>% addPolylines(data = Bicycle_lines, group = 'Bicycle', color = 'blue', weight = get_line_weights('bicycle'))
+			
+			incProgress(1/n, "Loading trains...")
+			map <- addPolylines(map, data = Train_lines, group = 'Train', color = 'blue', weight = get_line_weights('train'))
+			
+			incProgress(1/n, "Loading buses...")
+			map <- addPolylines(map, data = Public_bus_lines, group = 'Bus', color = 'blue', weight = get_line_weights('bus'))
+			
+			incProgress(1/n, "Loading company vehicles...")
+			map <- addPolylines(map, data = Drive_a_company_car_truck_or_van_lines, group = 'Company vehicle', color = 'blue')
+
+			incProgress(1/n, "Loading private vehicles...")
+			map <- addPolylines(map, data = Drive_a_private_car_truck_or_van_lines, group = 'Private vehicle', color = 'blue')
+			
+			incProgress(1/n, "Loading passengers...")
+			map <- addPolylines(map, data = Passenger_in_a_car_truck_van_or_company_bus_lines, group = 'Private passenger', color = 'blue')
+			
+			incProgress(1/n, "Loading walkers...")
+			map <- addPolylines(map, data = Walk_or_jog_lines, group = 'Walk or jog', color = 'blue')
+			
+			incProgress(1/n, "Loading ferries...")
+			map <-  addPolylines(map, data = Ferry_lines, group = 'Ferry', color = 'blue')
+			
+			map
+		})
+
+
+	})
+
 	output$commute_types_bar <- renderPlot({
+
+		comm_summ <- df %>%
+			group_by(CommuteType) %>%
+			summarise(totals = sum(value)) %>%
+			mutate(percent = totals / sum(totals) * 100) %>%
+			arrange(desc(percent))
 
 		ggplot(comm_summ, aes(x = CommuteType, y = percent)) +
 			geom_col() +
