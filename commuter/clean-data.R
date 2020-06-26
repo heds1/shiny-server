@@ -84,7 +84,7 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 
 	# threshold the counts into bins so we can pass a weight to addPolylines
 	mutate(
-		wt = case_when(
+		Weight = case_when(
 			Count <10 ~ 1,
 			Count >=10 & Count <20 ~ 2,
 			Count >=20 & Count <30 ~ 3,
@@ -101,33 +101,13 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 
 	left_join(
 		y = rename(df_geo, WorkplaceREGCName = REGCName, WorkplaceTAName = TAName),
-		by = c("WorkplaceSA2Code" = "SA2Code"))
+		by = c("WorkplaceSA2Code" = "SA2Code")) %>%
 
-# TODO: select..
+	select(
+		ResidenceSA2Name, WorkplaceSA2Name,
+		ResidenceLng, ResidenceLat, WorkplaceLng, WorkplaceLat,
+		CommuteType, Count, Weight,
+		ResidenceREGCName, ResidenceTAName,
+		WorkplaceREGCName, WorkplaceTAName)
 
-
-# as an aside, just to check that our reference data contain all of the SA2
-# codes that are in the commuter data:
-
-match_vector <- c()
-
-for (SA2Code in unique(c(unique(df$ResidenceSA2Code), unique(df$WorkplaceSA2Code)))) {
-	if (SA2Code %in% df_geo$SA2Code) {
-		match_vector <- c(match_vector, TRUE)
-	} else {
-		match_vector <- c(match_vector, FALSE)
-	}
-}
-
-table(match_vector)
-
-
-
-
-# write.csv(df, 'cleaned-data.csv')
-# library(rgdal)
-
-# fw <- readOGR(dsn = "C:/Users/hls/code/statsnz/shp",
-#               layer = "statistical-area-2-2018-generalised")
-
-# leaflet() %>% addTiles() %>% addPolygons(data = fw)
+write.csv(df, 'cleaned-commuter-data.csv', row.names = FALSE)
