@@ -56,7 +56,9 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 			value >=20 & value <30 ~ 3,
 			value >=30 & value <40 ~ 4,
 			value >=40 & value <50 ~ 5,
-			value >50 ~ 6))
+			value >50 ~ 6)) %>%
+	filter(CommuteType != 'Other',
+		CommuteType != 'Work_at_home')
 
 # test <- Bicycle_lines[1000:1006,]
 
@@ -139,8 +141,13 @@ get_line_weights <- function(commute_type) {
 	return (line_weight_list[[grep(commute_type, commute_type_keys, ignore.case = TRUE)]]$wt)
 }
 
+# colors
+my_pal_hex <- brewer.pal(8, "Dark2")
+names(my_pal_hex) <- commute_type_keys$CommuteType
+my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
 
-# commute_types <- unique(df$CommuteType)
+# my_pal <- colorFactor(my_pal_hex, domain = commute_type_keys$CommuteType)
+
 
 ui <- {
 	tagList(
@@ -196,6 +203,12 @@ server <- function(input, output, session) {
 		leaflet(options = leafletOptions(minZoom = 4)) %>%
 			addTiles() %>%
     		setView(174,-41.2,6) %>%
+			addLegend(
+				position = "bottomright",
+        		pal = my_pal,
+				values = names(my_pal_hex)) %>%
+				#values = commute_type_keys$CommuteType) %>%
+				
 
 			# to control layers
 			addLayersControl(
@@ -214,28 +227,68 @@ server <- function(input, output, session) {
 		withProgress(message = 'Loading data...', value = 0, {
 			n <- 8
 			incProgress(1/n, "Loading bicycles...")
-			map <- leafletProxy("map") %>% addPolylines(data = Bicycle_lines, group = 'Bicycle', color = 'blue', weight = get_line_weights('bicycle'))
+			map <- leafletProxy("map") %>%
+				addPolylines(
+					data = Bicycle_lines,
+					group = 'Bicycle',
+					#color = my_pal('Bicycle'),
+					color = my_pal_hex[['Bicycle']],
+
+					weight = get_line_weights('bicycle'))
 			
 			incProgress(1/n, "Loading trains...")
-			map <- addPolylines(map, data = Train_lines, group = 'Train', color = 'blue', weight = get_line_weights('train'))
+			map <- addPolylines(map,
+				data = Train_lines,
+				group = 'Train',
+				#color = my_pal('Bicycle'),
+				color = my_pal_hex[['Train']],
+				weight = get_line_weights('train'))
 			
 			incProgress(1/n, "Loading buses...")
-			map <- addPolylines(map, data = Public_bus_lines, group = 'Bus', color = 'blue', weight = get_line_weights('bus'))
+			map <- addPolylines(map,
+				data = Public_bus_lines,
+				group = 'Bus',
+				#color = my_pal('Public_bus'),
+				color = my_pal_hex[['Public_bus']],
+				weight = get_line_weights('bus'))
 			
 			incProgress(1/n, "Loading company vehicles...")
-			map <- addPolylines(map, data = Drive_a_company_car_truck_or_van_lines, group = 'Company vehicle', color = 'blue')
+			map <- addPolylines(map,
+				data = Drive_a_company_car_truck_or_van_lines,
+				group = "Company vehicle",
+				color = my_pal_hex[['Drive_a_company_car_truck_or_van']],
+				weight = get_line_weights('company'))
 
 			incProgress(1/n, "Loading private vehicles...")
-			map <- addPolylines(map, data = Drive_a_private_car_truck_or_van_lines, group = 'Private vehicle', color = 'blue')
+			map <- addPolylines(map,
+				data = Drive_a_private_car_truck_or_van_lines,
+				group = "Private vehicle",
+				color = my_pal_hex[['Drive_a_private_car_truck_or_van']],
+				weight = get_line_weights('private'))
 			
 			incProgress(1/n, "Loading passengers...")
-			map <- addPolylines(map, data = Passenger_in_a_car_truck_van_or_company_bus_lines, group = 'Private passenger', color = 'blue')
+			map <- addPolylines(map,
+				data = Passenger_in_a_car_truck_van_or_company_bus_lines,
+				group = 'Private passenger',
+				color = my_pal_hex[['Passenger_in_a_car_truck_van_or_company_bus']],
+				#color = my_pal_hex[6],
+				weight = get_line_weights('passenger'))
 			
 			incProgress(1/n, "Loading walkers...")
-			map <- addPolylines(map, data = Walk_or_jog_lines, group = 'Walk or jog', color = 'blue')
+			map <- addPolylines(map,
+				data = Walk_or_jog_lines,
+				group = 'Walk or jog',
+				#color = my_pal_hex[7],
+				color = my_pal_hex[['Walk_or_jog']],
+				weight = get_line_weights('walk'))
 			
 			incProgress(1/n, "Loading ferries...")
-			map <-  addPolylines(map, data = Ferry_lines, group = 'Ferry', color = 'blue')
+			map <-  addPolylines(map,
+				data = Ferry_lines,
+				group = 'Ferry',
+				#color = my_pal_hex[8],
+				color = my_pal_hex[['Ferry']],
+				weight = get_line_weights('ferry'))
 			
 			map
 		})
