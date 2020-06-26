@@ -110,4 +110,4 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 		ResidenceREGCName, ResidenceTAName,
 		WorkplaceREGCName, WorkplaceTAName)
 
-write.csv(df, 'cleaned-commuter-data.csv', row.names = FALSE)
+write.csv(df, paste0(getwd(), '/cleaned-commuter-data.csv'), row.names = FALSE)
