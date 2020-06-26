@@ -110,4 +110,45 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 		ResidenceREGCName, ResidenceTAName,
 		WorkplaceREGCName, WorkplaceTAName)
 
-write.csv(df, paste0(getwd(), '/cleaned-commuter-data.csv'), row.names = FALSE)
+# write.csv(df, paste0(getwd(), '/cleaned-commuter-data.csv'), row.names = FALSE)
+
+
+# function to create a matrix suitable for passing to leaflet::addPolylines
+# this forms a matrix with two columns, corresponding to lat and lng.
+# the initial point coordinates are on the first row, the second point
+# coordinates are on the second row (these are combined to form the line), and
+# the third row contains c(NA, NA). the fourth row starts again with a new line
+# (i.e., the next three rows is the next line).
+
+create_polyline_matrix <- function(data) {
+	data_vector <- c()
+	for (row in 1:nrow(data)) {
+		data_vector <- c(
+			data_vector,
+			as.numeric(c(
+				data[row,'ResidenceLng'], data[row,'ResidenceLat'],
+			 	data[row,'WorkplaceLng'], data[row,'WorkplaceLat'],
+				 NA, NA)))
+	}
+	return (matrix(data = data_vector, ncol = 2, byrow = TRUE))
+}
+
+
+# split types into list of dfs so we can create layers
+commute_type_list <- df %>% group_by(CommuteType) %>% group_split()
+
+# get group keys
+commute_type_keys <- df %>% group_by(CommuteType) %>% group_keys()
+
+# to get index, can use group keys like this:
+# grep('Bicycle', commute_type_keys$CommuteType)
+
+# create all the matrices
+for (commute_type in commute_type_keys$CommuteType) {
+	this_type_data <- commute_type_list[[grep(commute_type, commute_type_keys$CommuteType)]]
+	this_mat <- create_polyline_matrix(this_type_data)
+	write.table(this_mat,
+		paste0(getwd(), '/data/line-matrices/', commute_type, 'LineMatrix.txt'),
+		row.names = FALSE, col.names = FALSE)
+}
+
