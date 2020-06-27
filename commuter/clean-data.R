@@ -133,22 +133,29 @@ create_polyline_matrix <- function(data) {
 	return (matrix(data = data_vector, ncol = 2, byrow = TRUE))
 }
 
+# create all the commute type-specific line matrices and line weights
+for (commute_type in unique(df$CommuteType)) {
 
-# split types into list of dfs so we can create layers
-commute_type_list <- df %>% group_by(CommuteType) %>% group_split()
+	these_data <- filter(df, CommuteType == commute_type)
+	# write data containing commuter line weights
+	write.csv(select(these_data, CommuteType, Weight),
+		paste0(getwd(), '/data/line-weights/', commute_type, 'LineWeights.csv'),
+			row.names = FALSE)
 
-# get group keys
-commute_type_keys <- df %>% group_by(CommuteType) %>% group_keys()
+	this_matrix <- create_polyline_matrix(these_data)
 
-# to get index, can use group keys like this:
-# grep('Bicycle', commute_type_keys$CommuteType)
-
-# create all the matrices
-for (commute_type in commute_type_keys$CommuteType) {
-	this_type_data <- commute_type_list[[grep(commute_type, commute_type_keys$CommuteType)]]
-	this_mat <- create_polyline_matrix(this_type_data)
-	write.table(this_mat,
+	# write coordinate data into matrix to be passed to addPolylines
+	write.table(this_matrix,
 		paste0(getwd(), '/data/line-matrices/', commute_type, 'LineMatrix.txt'),
 		row.names = FALSE, col.names = FALSE)
 }
+
+
+
+
+# to get the actual shapefiles (not just TA/REGC metadata as above) in a format
+# easy for leaflet to read, we download the same dataset:
+# https://datafinder.stats.govt.nz/layer/95065-statistical-area-2-higher-geographies-2018-generalised/
+# but export as shapefiles with projection of WGS 84 (EPSG:4326)
+
 
