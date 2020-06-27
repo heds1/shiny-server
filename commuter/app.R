@@ -4,29 +4,27 @@ library(leaflet)
 library(ggplot2)
 library(shinycssloaders)
 library(shinyjs)
+library(rgdal)
 
+polygon_layers <- list()
 
+polygon_layers[['territorial']] <- readOGR(
+	dsn = "C:/Users/hls/code/statsnz/ta",
+    layer = "territorial-authority-2018-generalised")
 
-# function to get line weights. takes a commute_type argument that is used to
-# match with the commute_type_keys variable to get the correct dataframe in the
-# commute_type_list list of dfs containing the weights. weights are not matched
-# explicitly, they are simply matched by order. that is, it's assumed that the
-# matrix passed to addPolylines has the line data in the same order as that
-# passed in as weights.
+polygon_layers[['regional']] <- readOGR(
+	dsn = "C:/Users/hls/code/statsnz/regc",
+	layer = "regional-council-2018-generalised")
+
+# function to get line weights for a commute type. takes a commute_type argument
+# that is used to match with the names of line_weights to get the correct
+# dataframe containing the weights. weights are not matched explicitly, they are
+# simply matched by order. that is, it's assumed that the matrix passed to
+# addPolylines has the line data in the same order as that passed in as weights.
 
 get_line_weights <- function(commute_type) {
-	return (line_weight_list[[grep(
-		commute_type, commute_type_keys$CommuteType, ignore.case = TRUE)]]$Weight)
+	return (line_weights[[paste0(commute_type, 'LineWeights')]]$Weight)
 }
-
-
-df <- read.csv(paste0(getwd(), '/data/cleaned-commuter-data.csv'))
-
-# split weights into list of dfs so we can get appropriate vals
-line_weight_list <- df %>% select(CommuteType, Weight) %>% group_by(CommuteType) %>% group_split()
-
-# get group keys
-commute_type_keys <- df %>% group_by(CommuteType) %>% group_keys()
 
 # commuter line data are stored in data/line-matrices/*.txt
 # read these into a list of matrices
@@ -34,6 +32,15 @@ line_matrices <- list()
 for (file in dir("./data/line-matrices")) {
 	line_matrices[[sub('.txt', '', file)]] <- as.matrix(
 		read.table(paste0(getwd(), '/data/line-matrices/', file)))
+}
+
+# commute line weights are stored in data/line-weights/*.csv
+# read these into a list of dfs
+line_weights <- list()
+for (file in dir("./data/line-weights")) {
+	line_weights[[sub('.csv', '', file)]] <- read.csv(
+		paste0(getwd(), '/data/line-weights/', file)
+	)
 }
 
 # group names. todo make these nicer
@@ -47,21 +54,17 @@ my_pal_hex <- c(
 names(my_pal_hex) <- names(line_matrices)
 my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
 
+leaflet_labels_js <- "shinyjs.addLabels = function() {
+		$('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:center\">Select commuter types</label>');
+		$('.leaflet-control-layers-base').prepend('<label style=\"text-align:center\">Select area boundaries</label>');
+	}"
+
 ui <- {
 	tagList(
 		useShinyjs(),
-		tags$head(
-			tags$style(
-				'.shiny-notification{
-					position: fixed;
-					top: 33%;
-					left: 33%;
-					right: 33%;'
-
-			)
-		),
+		extendShinyjs(text=leaflet_labels_js),
+		includeCSS('C:/Users/hls/code/shiny-server/commuter/style.css'),
 		navbarPage(
-			
 			title="There and Back Again",
 			tabPanel("Map",
 				sidebarLayout(
@@ -90,9 +93,9 @@ server <- function(input, output, session) {
   
 	# the strategy is to just load the base map on instantiation. layers can be
 	# added by proxy, so that server load is not front-loaded.
-  	output$map <- renderLeaflet({
+  	output$map <- renderLeaflet({ 
 
-		leaflet(options = leafletOptions(minZoom = 4)) %>%
+		map <- leaflet(options = leafletOptions(minZoom = 4)) %>%
 			addTiles() %>%
     		setView(174,-41.2,6) %>%
 			addLegend(
@@ -100,22 +103,41 @@ server <- function(input, output, session) {
         		pal = my_pal,
 				values = names(my_pal_hex)) %>%
 			addLayersControl(
-				overlayGroups = commute_groups,
+				baseGroups = c('None', names(polygon_layers)),
+				overlayGroups = commute_groups, #c(commute_groups, names(polygon_layers)),
 				options = layersControlOptions(collapsed = FALSE)) %>%
 
 			# hide most layers on startup
+			# hideGroup(c(commute_groups, names(polygon_layers)))
 			hideGroup(commute_groups)
+
+		return (map)
     
 	})
 
+
+
+	js$addLabels()
+
 	# add layers
 	observeEvent(input$load_data, {
+		js$addLabels()
 		shinyjs::disable('load_data')
 		withProgress(message = 'Loading data...', value = 0, {
-			n <- length(line_matrices)
+			n <- length(line_matrices) + length(polygon_layers)
 
 			map <- leafletProxy("map")
+			
+			for (layer in names(polygon_layers)) {
 
+				incProgress(1/n, paste0("Loading ", layer, " boundaries"))
+				
+				map <- addPolygons(map,
+					data = polygon_layers[[layer]],
+					group = layer)
+
+			}
+			
 			for (commute_lines in names(line_matrices)) {
 			
 				this_name <- gsub('LineMatrix', '', commute_lines)
@@ -125,13 +147,12 @@ server <- function(input, output, session) {
 					data = line_matrices[[commute_lines]],
 					group = this_name,
 					color = my_pal_hex[[commute_lines]],
-					weight = get_line_weights(this_name)
-					)
-			
+					weight = get_line_weights(this_name))
+
 			}
-			return (map)
 		})
 
+		return (map)
 
 	})
 
@@ -154,3 +175,4 @@ server <- function(input, output, session) {
 
 shinyApp(ui, server)
 
+#runApp('C:/Users/hls/code/shiny-server/commuter')
