@@ -5,16 +5,7 @@ library(ggplot2)
 library(shinycssloaders)
 library(shinyjs)
 library(rgdal)
-
-polygon_layers <- list()
-
-polygon_layers[['territorial']] <- readOGR(
-	dsn = "C:/Users/hls/code/statsnz/ta",
-    layer = "territorial-authority-2018-generalised")
-
-polygon_layers[['regional']] <- readOGR(
-	dsn = "C:/Users/hls/code/statsnz/regc",
-	layer = "regional-council-2018-generalised")
+library(rmapshaper) # for simplify (compress polygons)
 
 # function to get line weights for a commute type. takes a commute_type argument
 # that is used to match with the names of line_weights to get the correct
@@ -43,6 +34,21 @@ for (file in dir("./data/line-weights")) {
 	)
 }
 
+# territorial authority (TA) and regional council (REGC) polygons are stored in
+# shapefiles, read in here
+polygon_layers <- list()
+
+# read in
+# polygon_layers[['territorial']] <- readOGR(
+# 	dsn = "C:/Users/hls/code/statsnz/ta",
+#     layer = "territorial-authority-2018-generalised")
+
+polygon_layers[['regional']] <- readOGR(
+	dsn = "C:/Users/hls/code/statsnz/regc",
+	layer = "regional-council-2018-generalised")
+
+polygon_layers[['regional']] <- rmapshaper::ms_simplify(polygon_layers[['regional']])
+
 # group names. todo make these nicer
 commute_groups <- gsub('LineMatrix', '', names(line_matrices))
 
@@ -70,7 +76,20 @@ ui <- {
 				sidebarLayout(
 					sidebarPanel(
 						h2('How Aotearoa Gets to Work', class="display-2"),
-						actionButton('load_data','Get started!')
+						actionButton('load_data','Get started!'),
+						# selectizeInput('ta_filter',
+						# 	label = 'Filter by territorial authority',
+						# 	choices = c('Show all', as.character(sort(polygon_layers[['territorial']]$TA2018_V_1))),
+						# 	selected = 'Show all',
+						# 	multiple = TRUE
+						# ),
+						selectizeInput('regc_filter',
+							label = 'Filter by regional council',
+							choices = c('Show all', as.character(sort(polygon_layers[['regional']]$REGC2018_1))),
+							selected = 'Show all',
+							multiple = TRUE
+						),
+						verbatimTextOutput('coords'),
 					),
 					mainPanel(
 						leafletOutput('map', height = '90vh')
@@ -88,6 +107,8 @@ ui <- {
 		)
 	)
 }
+
+coords_gather <- list()
 
 server <- function(input, output, session) {
   
@@ -115,9 +136,34 @@ server <- function(input, output, session) {
     
 	})
 
+	observe({
+        click <- input$map_shape_click
+        if(is.null(click))
+            return()
+
+        ## use the click to access the zoom and set the view according to these
+        ## the click$id is now returned with the 'name' of the state
+        ## because we specified it in the LayerId argument
+
+		# access with click$id
+		this_regions_coordinates <- regional_coordinates[match(click$id, regional_coordinates$id),]
+
+        #idx <- which(mapStates$name == click$id)
+        z <- 8 # mapStates$zoom[[idx]]
+
+        leafletProxy("map") %>% 
+            setView(
+				lng = this_regions_coordinates$lng,
+				lat = this_regions_coordinates$lat,
+				zoom = this_regions_coordinates$zoom)
+    })
+
+	output$coords <- eventReactive(input$map_shape_click, {
+		coords_gather[[input$map_shape_click$id]] <<- input$map_shape_click
+		return (input$map_shape_click)
+	})
 
 
-	js$addLabels()
 
 	# add layers
 	observeEvent(input$load_data, {
@@ -130,11 +176,24 @@ server <- function(input, output, session) {
 			
 			for (layer in names(polygon_layers)) {
 
+				polygon_names <- as.character(polygon_layers[[layer]]@data$REGC2018_1)
+
 				incProgress(1/n, paste0("Loading ", layer, " boundaries"))
 				
 				map <- addPolygons(map,
 					data = polygon_layers[[layer]],
-					group = layer)
+					group = layer,
+					layerId = polygon_names,
+					opacity = 0.2,
+					fillOpacity = 0.2,
+					highlight = highlightOptions(
+						weight = 5,
+						#color = "#666",
+						#dashArray = "",
+						fillOpacity = 0.7,
+						bringToFront = TRUE))
+
+
 
 			}
 			
@@ -176,3 +235,5 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 
 #runApp('C:/Users/hls/code/shiny-server/commuter')
+
+
