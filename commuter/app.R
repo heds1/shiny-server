@@ -52,6 +52,13 @@ polygon_layers[['regional']] <- rmapshaper::ms_simplify(polygon_layers[['regiona
 # group names. todo make these nicer
 commute_groups <- gsub('LineMatrix', '', names(line_matrices))
 
+
+df <- read.csv(paste0(getwd(), '/cleaned-commuter-data.csv'))
+
+regional_coordinates <- read.csv('C:/Users/hls/code/shiny-server/commuter/data/regional-coordinates.csv')
+
+
+
 # colors
 #my_pal_hex <- brewer.pal(length(line_matrices), "Paired")
 my_pal_hex <- c(
@@ -77,38 +84,27 @@ ui <- {
 					sidebarPanel(
 						h2('How Aotearoa Gets to Work', class="display-2"),
 						actionButton('load_data','Get started!'),
-						# selectizeInput('ta_filter',
-						# 	label = 'Filter by territorial authority',
-						# 	choices = c('Show all', as.character(sort(polygon_layers[['territorial']]$TA2018_V_1))),
-						# 	selected = 'Show all',
-						# 	multiple = TRUE
-						# ),
+
 						selectizeInput('regc_filter',
 							label = 'Filter by regional council',
 							choices = c('Show all', as.character(sort(polygon_layers[['regional']]$REGC2018_1))),
 							selected = 'Show all',
 							multiple = TRUE
 						),
-						verbatimTextOutput('coords'),
+						hr(),
+						plotOutput('regional_statistics')
+
 					),
-					mainPanel(
-						leafletOutput('map', height = '90vh')
-					)
+					mainPanel(leafletOutput('map', height = '90vh'))
     			)
 				
 			),
-			tabPanel("Graphs",
-				tabsetPanel(
-					tabPanel('Commute types',
-						plotOutput('commute_types_bar')) %>% withSpinner(),
-					tabPanel('Graph2')
-				)),
-			tabPanel("About")
+			tabPanel("About this tool")
 		)
 	)
 }
 
-coords_gather <- list()
+
 
 server <- function(input, output, session) {
   
@@ -136,34 +132,56 @@ server <- function(input, output, session) {
     
 	})
 
+	# zoom to region on click
+	# inspiration from SymbolixAU here:
+	# https://stackoverflow.com/questions/42771474/r-shiny-leaflet-click-on-shape-and-zoom-to-bounds-using-maps-package
 	observe({
         click <- input$map_shape_click
         if(is.null(click))
             return()
 
-        ## use the click to access the zoom and set the view according to these
-        ## the click$id is now returned with the 'name' of the state
-        ## because we specified it in the LayerId argument
+		# get lng/lat/zoom data for this region with click$id
+		this_region <- regional_coordinates[match(click$id, regional_coordinates$id),]
 
-		# access with click$id
-		this_regions_coordinates <- regional_coordinates[match(click$id, regional_coordinates$id),]
-
-        #idx <- which(mapStates$name == click$id)
-        z <- 8 # mapStates$zoom[[idx]]
-
+		# update map with lng/lat/zoom for this region
         leafletProxy("map") %>% 
             setView(
-				lng = this_regions_coordinates$lng,
-				lat = this_regions_coordinates$lat,
-				zoom = this_regions_coordinates$zoom)
+				lng = this_region$lng,
+				lat = this_region$lat,
+				zoom = this_region$zoom)
     })
 
-	output$coords <- eventReactive(input$map_shape_click, {
-		coords_gather[[input$map_shape_click$id]] <<- input$map_shape_click
-		return (input$map_shape_click)
+	output$regional_statistics <- renderPlot({
+		
+		click <- input$map_shape_click
+		
+		if (is.null(click)) {
+			comm_summ <- df %>%
+			group_by(CommuteType) %>%
+			summarise(totals = sum(Count)) %>%
+			mutate(percent = totals / sum(totals) * 100) %>%
+			arrange(desc(percent))
+
+			ggplot(comm_summ, aes(x = CommuteType, y = percent)) +
+				geom_col() +
+				scale_x_discrete(limits = rev(comm_summ$CommuteType)) +
+				coord_flip()
+		} else {
+
+			df %>%
+				filter(ResidenceREGCName == click$id) %>%
+					group_by(CommuteType) %>%
+					summarise(totals = sum(Count)) %>%
+					mutate(percent = totals / sum(totals) * 100) %>%
+					arrange(desc(percent)) %>%
+					ggplot(aes(x = CommuteType, y = percent)) +
+						geom_col() +
+						scale_x_discrete(limits = rev(comm_summ$CommuteType)) +
+						coord_flip()
+
+		}
+		
 	})
-
-
 
 	# add layers
 	observeEvent(input$load_data, {
@@ -192,9 +210,6 @@ server <- function(input, output, session) {
 						#dashArray = "",
 						fillOpacity = 0.7,
 						bringToFront = TRUE))
-
-
-
 			}
 			
 			for (commute_lines in names(line_matrices)) {
@@ -207,7 +222,6 @@ server <- function(input, output, session) {
 					group = this_name,
 					color = my_pal_hex[[commute_lines]],
 					weight = get_line_weights(this_name))
-
 			}
 		})
 
@@ -215,19 +229,21 @@ server <- function(input, output, session) {
 
 	})
 
-	output$commute_types_bar <- renderPlot({
+	# render plot
+	output$commute_props_by_region <- renderPlot({
+		commute_proportions_by_region <- df %>%
+			filter(ResidenceREGCName != 'Area Outside Region') %>%
+			group_by(ResidenceREGCName, CommuteType) %>%
+			summarise(Count = n()) %>%
+			ungroup() %>%
+			group_by(ResidenceREGCName) %>%
+			mutate(Total = sum(Count)) %>%
+			mutate(Percent = Count / Total * 100)
 
-		comm_summ <- df %>%
-			group_by(CommuteType) %>%
-			summarise(totals = sum(value)) %>%
-			mutate(percent = totals / sum(totals) * 100) %>%
-			arrange(desc(percent))
-
-		ggplot(comm_summ, aes(x = CommuteType, y = percent)) +
-			geom_col() +
-			scale_x_discrete(limits = rev(comm_summ$CommuteType)) +
-			coord_flip()
-
+		commute_proportions_by_region %>%
+			filter(CommuteType %in% input$commute_props_by_region_selector) %>%
+			ggplot(aes(x = ResidenceREGCName, y = Percent)) +
+				geom_col()
 	})
 	
 }
