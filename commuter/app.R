@@ -82,22 +82,41 @@ ui <- {
 			tabPanel("Map",
 				sidebarLayout(
 					sidebarPanel(
-						h2('How Aotearoa Gets to Work', class="display-2"),
-						actionButton('load_data','Get started!'),
-
-						selectizeInput('regc_filter',
-							label = 'Filter by regional council',
-							choices = c('Show all', as.character(sort(polygon_layers[['regional']]$REGC2018_1))),
-							selected = 'Show all',
-							multiple = TRUE
-						),
-						hr(),
-						plotOutput('regional_statistics')
-
+						h2('How Aotearoa Gets to Work', class="display-2", style="text-align: center;"),
+						#radioButtons("about_page_controller", "Show about page", 1:2, 1),
+						tabsetPanel(
+							id = "hidden_tabs",
+							type = "hidden",
+							tabPanelBody("home_panel",
+								"Panel 1 content",
+								actionLink('about_controller',
+									"About this tool"),
+								p(""),
+								actionButton('load_data','Get started!'),
+								# selectizeInput('regc_filter',
+								# 	label = 'Filter by regional council',
+								# 	choices = c('Show all', as.character(sort(polygon_layers[['regional']]$REGC2018_1))),
+								# 	selected = 'Show all',
+								# 	multiple = TRUE
+								# ),
+								hr(),
+								tabsetPanel(type = "pills",
+									tabPanel("Commute type comparison", plotOutput("regional_statistics")),
+									tabPanel("Other plot", plotOutput("plot2")),
+									tabPanel("Yet another plot", plotOutput("plot3"))
+								),
+								height = '90vh'
+							),
+							tabPanelBody("about_panel",
+								"Panel 2 content i.e. ABOUT",
+								actionLink('home_controller',
+									"Return home"))
+						)
+						
+						
 					),
 					mainPanel(leafletOutput('map', height = '90vh'))
     			)
-				
 			),
 			tabPanel("About this tool")
 		)
@@ -107,6 +126,16 @@ ui <- {
 
 
 server <- function(input, output, session) {
+
+	# show 'about' panel
+	observeEvent(input$about_controller, {
+    	updateTabsetPanel(session, "hidden_tabs", selected = 'about_panel')
+	}) 
+
+	# show home panel
+	observeEvent(input$home_controller, {
+		updateTabsetPanel(session, "hidden_tabs", selected = "home_panel")
+	})
   
 	# the strategy is to just load the base map on instantiation. layers can be
 	# added by proxy, so that server load is not front-loaded.
@@ -151,32 +180,38 @@ server <- function(input, output, session) {
 				zoom = this_region$zoom)
     })
 
+	# render plot
 	output$regional_statistics <- renderPlot({
 		
+		# get clicked region
 		click <- input$map_shape_click
-		
-		if (is.null(click)) {
-			comm_summ <- df %>%
-			group_by(CommuteType) %>%
-			summarise(totals = sum(Count)) %>%
-			mutate(percent = totals / sum(totals) * 100) %>%
-			arrange(desc(percent))
 
-			ggplot(comm_summ, aes(x = CommuteType, y = percent)) +
-				geom_col() +
-				scale_x_discrete(limits = rev(comm_summ$CommuteType)) +
-				coord_flip()
+		# average commute rates for whole nation
+		national_comparison <- df %>%
+			group_by(CommuteType) %>%
+			summarise(Sum = sum(Count)) %>%
+			mutate(Proportion = Sum / sum(Sum) * 100) %>%
+			arrange(desc(Proportion))
+		
+		# if user hasn't clicked on a region, then render national comparison
+		if (is.null(click)) {
+			national_comparison %>%
+				ggplot(aes(x = CommuteType, y = Proportion)) +
+					geom_col() +
+					scale_x_discrete(limits = rev(national_comparison$CommuteType)) +
+					coord_flip() # todo add colours
+		# otherwise, show regional data
 		} else {
 
 			df %>%
 				filter(ResidenceREGCName == click$id) %>%
 					group_by(CommuteType) %>%
-					summarise(totals = sum(Count)) %>%
-					mutate(percent = totals / sum(totals) * 100) %>%
-					arrange(desc(percent)) %>%
-					ggplot(aes(x = CommuteType, y = percent)) +
+					summarise(Sum = sum(Count)) %>%
+					mutate(Proportion = Sum / sum(Sum) * 100) %>%
+					arrange(desc(Proportion)) %>%
+					ggplot(aes(x = CommuteType, y = Proportion)) +
 						geom_col() +
-						scale_x_discrete(limits = rev(comm_summ$CommuteType)) +
+						scale_x_discrete(limits = rev(national_comparison$CommuteType)) +
 						coord_flip()
 
 		}
