@@ -77,52 +77,53 @@ ui <- {
 		useShinyjs(),
 		extendShinyjs(text=leaflet_labels_js),
 		includeCSS('C:/Users/hls/code/shiny-server/commuter/style.css'),
-		navbarPage(
-			title="There and Back Again",
-			tabPanel("Map",
-				sidebarLayout(
-					sidebarPanel(
-						h2('How Aotearoa Gets to Work', class="display-2", style="text-align: center;"),
-						#radioButtons("about_page_controller", "Show about page", 1:2, 1),
+		fluidPage(
+			fluidRow(
+				div(class="col-sm-4",
+					tags$form(class="well",
+						h3('How Aotearoa Gets to Work', class="display-2", style="text-align: center;"),
+						hr(),
 						tabsetPanel(
 							id = "hidden_tabs",
 							type = "hidden",
 							tabPanelBody("home_panel",
-								"Panel 1 content",
-								actionLink('about_controller',
-									"About this tool"),
-								p(""),
-								actionButton('load_data','Get started!'),
-								# selectizeInput('regc_filter',
-								# 	label = 'Filter by regional council',
-								# 	choices = c('Show all', as.character(sort(polygon_layers[['regional']]$REGC2018_1))),
-								# 	selected = 'Show all',
-								# 	multiple = TRUE
-								# ),
-								hr(),
-								tabsetPanel(type = "pills",
-									tabPanel("Commute type comparison", plotOutput("regional_statistics")),
-									tabPanel("Other plot", plotOutput("plot2")),
-									tabPanel("Yet another plot", plotOutput("plot3"))
+								p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
+								p("The lines on the map represent the distance travelled by people using different
+									modes of transport. Thicker lines mean more people used that mode of transport for that particular journey.
+									You can explore the data further by checking out the graphs on the left."),
+								div(
+									p(style="display:inline", "Click on the button below to get started, or "),
+									actionLink('about_controller',
+									"learn more about these data.")
 								),
-								height = '90vh'
+								hr(),
+								div(style="text-align: center;", 
+									actionButton('load_data',"Let's get to work!")
+								)
 							),
 							tabPanelBody("about_panel",
 								"Panel 2 content i.e. ABOUT",
 								actionLink('home_controller',
-									"Return home"))
+									"Return home")
+							)
 						)
-						
-						
 					),
-					mainPanel(leafletOutput('map', height = '90vh'))
-    			)
-			),
-			tabPanel("About this tool")
+					tags$form(class="well",
+						tabsetPanel(type = "pills",
+							tabPanel("Commute type comparison", plotOutput("regional_statistics")),
+							tabPanel("Other plot", plotOutput("plot2")),
+							tabPanel("Yet another plot", plotOutput("plot3"))
+						)
+					)
+				),
+				div(class="col-sm-8",
+					tags$form(class='well',
+						leafletOutput('map', height = '90vh'))
+				)
+			)
 		)
 	)
 }
-
 
 
 server <- function(input, output, session) {
