@@ -102,9 +102,35 @@ ui <- {
 								)
 							),
 							tabPanelBody("about_panel",
-								"Panel 2 content i.e. ABOUT",
-								actionLink('home_controller',
-									"Return home")
+								div(style="padding-bottom: 10px;",
+									p(style="display:inline", "This tool uses the "),
+									a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
+										"Statistics New Zealand 2018 Census Commuter View dataset"),
+									p(style="display:inline", "to map the journeys of respondents from their place of residence to their place of work.")
+								),
+								
+								div(style="padding-bottom: 10px;",
+									p(style="display:inline", "The regional council boundaries were obtained from the "),
+									a(href="https://datafinder.stats.govt.nz/layer/95065-statistical-area-2-higher-geographies-2018-generalised/",
+										"Statistical Area 2 Higher Geographies 2018 dataset."),
+									p(style="display:inline", "The location data were mapped to the regional boundaries by assignment 
+										into Statistical Area 2 (SA2) zones, which are intended to group the population into defined areas that
+										interact together socioeconomically.")
+								),
+								div(
+									p(style="display:inline", "The data described above was further processed for use within this tool. The code used to reproduce these
+										data processing steps, as well as the full code for the application, is open source and 
+										available on the author's "),
+									a(href="https://github.com/heds1/shiny-server/tree/master/commuter", "Github repo"),
+									p(style="display:inline", " for this project. Questions, ideas, bug reports or observations about the weather are all very welcome"),
+									HTML("&mdash;"),
+									p(style="display:inline", "please use "),
+									a(href="https://www.hedleystirrat.co.nz/about/", "this form "),
+									p(style="display:inline", "to contact the author.")
+								),
+								hr(),
+								div(style="text-align: center",
+									actionButton('home_controller', "Return home"))
 							)
 						)
 					),
