@@ -135,9 +135,9 @@ ui <- {
 						)
 					),
 					tags$form(class="well",
-						tabsetPanel(type = "pills",
-							tabPanel("Commute type comparison", plotOutput("regional_statistics")),
-							tabPanel("Other plot", plotOutput("plot2")),
+						tabsetPanel(
+							tabPanel("Compare regions", plotOutput("regional_comparison")),
+							tabPanel("All regions", plotOutput("plot2")),
 							tabPanel("Yet another plot", plotOutput("plot3"))
 						)
 					)
@@ -208,7 +208,10 @@ server <- function(input, output, session) {
     })
 
 	# render plot
-	output$regional_statistics <- renderPlot({
+	output$regional_comparison <- renderPlot({
+
+		# todo do this outside this function globally
+		names(my_pal_hex) <- gsub("LineMatrix","", names(my_pal_hex))
 		
 		# get clicked region
 		click <- input$map_shape_click
@@ -222,11 +225,43 @@ server <- function(input, output, session) {
 		
 		# if user hasn't clicked on a region, then render national comparison
 		if (is.null(click)) {
-			national_comparison %>%
-				ggplot(aes(x = CommuteType, y = Proportion)) +
-					geom_col() +
-					scale_x_discrete(limits = rev(national_comparison$CommuteType)) +
-					coord_flip() # todo add colours
+			
+			# national_comparison %>%
+			# 	ggplot() +
+			# 		geom_col(aes(x = CommuteType, y = Proportion, fill = CommuteType)) +
+			# 		scale_x_discrete(limits = rev(national_comparison$CommuteType)) +
+			# 		coord_flip() +
+			# 		ggtitle("National averages") +
+			# 		theme(
+			# 			plot.title = element_text(hjust = 0.5),
+			# 			panel.grid.major = element_blank(),
+			# 			panel.grid.minor = element_blank(),
+			# 			panel.background = element_blank(),
+			# 			axis.title.y = element_blank(),
+			# 			axis.ticks.y = element_blank(),
+			# 			axis.text.y = element_blank()) +
+			# 		scale_fill_manual("Type", values = my_pal_hex)
+					
+			# what abuot stacked..
+			df %>%
+				mutate(ResidenceREGCName = gsub(" Region", "", ResidenceREGCName)) %>%
+				group_by(ResidenceREGCName, CommuteType) %>%
+				summarise(Sum = sum(Count)) %>%
+				mutate(Proportion = Sum / sum(Sum) * 100) %>%
+					ggplot() +
+						geom_col(aes(x = ResidenceREGCName, y = Proportion, fill = CommuteType)) +
+						#scale_x_discrete(limits = sort(unique())) +
+						coord_flip() +
+						ggtitle("Commute-type distribution by region") +
+						theme(
+							plot.title = element_text(hjust = 0.5),
+							panel.grid.major = element_blank(),
+							panel.grid.minor = element_blank(),
+							panel.background = element_blank(),
+							axis.title.y = element_blank(),
+							axis.ticks.y = element_blank()) +
+						scale_fill_manual("Type", values = my_pal_hex)
+
 		# otherwise, show regional data
 		} else {
 
