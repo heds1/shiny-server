@@ -3,19 +3,8 @@ library(dplyr)
 library(leaflet)
 library(ggplot2)
 library(shinycssloaders)
-library(shinyjs)
 library(rgdal)
-library(rmapshaper) # for simplify (compress polygons)
-
-# function to get line weights for a commute type. takes a commute_type argument
-# that is used to match with the names of line_weights to get the correct
-# dataframe containing the weights. weights are not matched explicitly, they are
-# simply matched by order. that is, it's assumed that the matrix passed to
-# addPolylines has the line data in the same order as that passed in as weights.
-
-get_line_weights <- function(commute_type) {
-	return (line_weights[[paste0(commute_type, 'LineWeights')]]$Weight)
-}
+library(shinyjs) # for disable of load_data button
 
 # commuter line data are stored in data/line-matrices/*.txt
 # read these into a list of matrices
@@ -38,7 +27,6 @@ for (file in dir("./data/line-weights")) {
 # shapefiles, read in here
 polygon_layers <- list()
 
-# read in
 # polygon_layers[['territorial']] <- readOGR(
 # 	dsn = "C:/Users/hls/code/statsnz/ta",
 #     layer = "territorial-authority-2018-generalised")
@@ -47,11 +35,20 @@ polygon_layers[['regional']] <- readOGR(
 	dsn = "C:/Users/hls/code/statsnz/regc",
 	layer = "regional-council-2018-generalised")
 
-polygon_layers[['regional']] <- rmapshaper::ms_simplify(polygon_layers[['regional']])
-
-# group names. todo make these nicer
-commute_groups <- gsub('LineMatrix', '', names(line_matrices))
-
+# set up group names for display. stored as list so can be read by addPolylines;
+# although must be pasted (i.e., unnamed chr) when provided to overlayGroups.
+verbose_commute_names <- list(
+	"Bicycle" = "Bicycle",
+	"DriveCompanyVehicle" = "Drive company vehicle",
+	"DrivePublicVehicle" = "Drive public vehicle",
+	"Ferry" = "Ferry",
+	"Other" = "Other",
+	"PrivatePassenger" = "Private passenger",
+	"PublicBus" = "Public bus",
+	"Train" = "Train",
+	"WalkOrJog" = "Walk or jog",
+	"WorkAtHome" = "Work at home"
+)
 
 df <- read.csv(paste0(getwd(), '/cleaned-commuter-data.csv'))
 
@@ -67,15 +64,9 @@ my_pal_hex <- c(
 names(my_pal_hex) <- names(line_matrices)
 my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
 
-leaflet_labels_js <- "shinyjs.addLabels = function() {
-		$('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:center\">Select commuter types</label>');
-		$('.leaflet-control-layers-base').prepend('<label style=\"text-align:center\">Select area boundaries</label>');
-	}"
 
 ui <- {
 	tagList(
-		useShinyjs(),
-		extendShinyjs(text=leaflet_labels_js),
 		includeCSS('C:/Users/hls/code/shiny-server/commuter/style.css'),
 		fluidPage(
 			fluidRow(
@@ -177,12 +168,16 @@ server <- function(input, output, session) {
 				values = names(my_pal_hex)) %>%
 			addLayersControl(
 				baseGroups = c('None', names(polygon_layers)),
-				overlayGroups = commute_groups, #c(commute_groups, names(polygon_layers)),
+				overlayGroups = paste0(verbose_commute_names),
 				options = layersControlOptions(collapsed = FALSE)) %>%
-
-			# hide most layers on startup
-			# hideGroup(c(commute_groups, names(polygon_layers)))
-			hideGroup(commute_groups)
+			hideGroup(paste0(verbose_commute_names)) %>%
+			htmlwidgets::onRender("
+				function() {
+					$('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:center\">Select commuter types</label>');
+					$('.leaflet-control-layers-base').prepend('<label style=\"text-align:center\">Select area boundaries</label>');
+				}
+			"
+			)
 
 		return (map)
     
@@ -282,7 +277,6 @@ server <- function(input, output, session) {
 
 	# add layers
 	observeEvent(input$load_data, {
-		js$addLabels()
 		shinyjs::disable('load_data')
 		withProgress(message = 'Loading data...', value = 0, {
 			n <- length(line_matrices) + length(polygon_layers)
@@ -309,16 +303,15 @@ server <- function(input, output, session) {
 						bringToFront = TRUE))
 			}
 			
-			for (commute_lines in names(line_matrices)) {
+			for (commute_name in verbose_commute_names) {
 			
-				this_name <- gsub('LineMatrix', '', commute_lines)
-				incProgress(1/n, paste0("Loading ", tolower(this_name)))
+				incProgress(1/n, paste0("Loading ", tolower(commute_name)))
 
 				map <- addPolylines(map,
-					data = line_matrices[[commute_lines]],
-					group = this_name,
-					color = my_pal_hex[[commute_lines]],
-					weight = get_line_weights(this_name))
+					data = line_matrices[[names(commute_name)]],
+					group = commute_name,
+					color = my_pal_hex[[names(commute_name)]],
+					weight = line_weights[[names(commute_name)]]$Weight)
 			}
 		})
 
