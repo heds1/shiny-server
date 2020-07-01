@@ -103,6 +103,11 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 		y = rename(df_geo, WorkplaceREGCName = REGCName, WorkplaceTAName = TAName),
 		by = c("WorkplaceSA2Code" = "SA2Code")) %>%
 
+	# remove Area Outside data
+	filter(
+		ResidenceREGCName != "Area Outside Region",
+		WorkplaceREGCName != "Area Outside Region") %>%
+
 	select(
 		ResidenceSA2Name, WorkplaceSA2Name,
 		ResidenceLng, ResidenceLat, WorkplaceLng, WorkplaceLat,
@@ -110,7 +115,7 @@ df <- read.csv(paste0(getwd(), "/2018-census-main-means-of-travel-to-work-by-sta
 		ResidenceREGCName, ResidenceTAName,
 		WorkplaceREGCName, WorkplaceTAName)
 
-# write.csv(df, paste0(getwd(), '/cleaned-commuter-data.csv'), row.names = FALSE)
+write.csv(df, paste0(getwd(), '/cleaned-commuter-data.csv'), row.names = FALSE)
 
 
 # function to create a matrix suitable for passing to leaflet::addPolylines
@@ -139,14 +144,14 @@ for (commute_type in unique(df$CommuteType)) {
 	these_data <- filter(df, CommuteType == commute_type)
 	# write data containing commuter line weights
 	write.csv(select(these_data, CommuteType, Weight),
-		paste0(getwd(), '/data/line-weights/', commute_type, 'LineWeights.csv'),
+		paste0(getwd(), '/data/line-weights/', commute_type, '.csv'),
 			row.names = FALSE)
 
 	this_matrix <- create_polyline_matrix(these_data)
 
 	# write coordinate data into matrix to be passed to addPolylines
 	write.table(this_matrix,
-		paste0(getwd(), '/data/line-matrices/', commute_type, 'LineMatrix.txt'),
+		paste0(getwd(), '/data/line-matrices/', commute_type, '.txt'),
 		row.names = FALSE, col.names = FALSE)
 }
 
@@ -154,8 +159,107 @@ for (commute_type in unique(df$CommuteType)) {
 
 
 # to get the actual shapefiles (not just TA/REGC metadata as above) in a format
-# easy for leaflet to read, we download the same dataset:
-# https://datafinder.stats.govt.nz/layer/95065-statistical-area-2-higher-geographies-2018-generalised/
+# easy for leaflet to read, we download the TA and REGC data separately:
+
+# Territorial Authority 2018 (generalised)
+# https://datafinder.stats.govt.nz/layer/92214-territorial-authority-2018-generalised/
+
+# Regional Council 2018 (generalised)
+# https://datafinder.stats.govt.nz/layer/92204-regional-council-2018-generalised/
+
 # but export as shapefiles with projection of WGS 84 (EPSG:4326)
 
+library(rgdal)
 
+TAs <- readOGR(
+	dsn = "C:/Users/hls/code/statsnz/ta",
+    layer = "territorial-authority-2018-generalised")
+
+REGCs <- readOGR(
+	dsn = "C:/Users/hls/code/statsnz/regc",
+	layer = "regional-council-2018-generalised")
+
+leaflet() %>% addTiles() %>% addPolygons(data = REGCs)
+
+
+
+
+
+# I wanted to implement autozoom when a particular region on the map was
+# clicked. in order to do this, I set up an observeEvent that recorded the
+# lat/lng and regional council shape id whenever it was clicked on. something
+# like this, that works because you can access the click data from Shiny with
+# input$MAPID_shape_click:
+
+# coords_gather <- list()
+# output$coords <- eventReactive(input$map_shape_click, {
+# 	coords_gather[[input$map_shape_click$id]] <<- input$map_shape_click
+# })
+
+# from there, I just turned that list into a dataframe with some extremely bad code:
+
+# for (i in 1:length(coords_gather)) {
+
+# 	this_region <- coords_gather[[i]]
+# 	this_id <- this_region['id']
+# 	this_lat <- this_region['lat']
+# 	this_lng <- this_region['lng']
+
+# 	these_data <- data.frame(
+# 		id = this_id, lat = this_lat, lng = this_lng)
+
+# 	if (!exists('regional_coordinates')) {
+# 		regional_coordinates <- these_data
+# 	} else {
+# 		regional_coordinates <- bind_rows(regional_coordinates, these_data)
+# 	}
+# }
+
+# i also wanted to hardcode zoom levels. the bigger regions need lower zoom
+# levels than the smaller regions. most are zoom = 7 or 8.
+#
+# regional_coordinates$zoom <- c(8, 8, 8, 8, 9, 9, 10, 9, 8, 9, 9, 8, 9, 9, 9, 9)
+#
+# write.csv(regional_coordinates, 'regional-coordinates.csv', row.names = FALSE)
+
+test <- df %>%
+	group_by(ResidenceREGCName, WorkplaceREGCName) %>%
+	summarise(
+		n = n()
+	)
+
+test2 <- df %>%
+	mutate(
+		SameRegion = case_when(
+			ResidenceREGCName == WorkplaceREGCName ~ 1,
+			TRUE ~ 0
+		)
+	) %>%
+	group_by(ResidenceREGCName) %>%
+	summarise(percent_same_region = sum(SameRegion) / n())
+
+test3 <- df %>%
+	mutate(
+		SameTA = case_when(
+			ResidenceTAName == WorkplaceTAName ~ 1,
+			TRUE ~ 0
+		)
+	) %>%
+	group_by(ResidenceTAName) %>%
+	summarise(percent_same_ta = sum(SameTA) / n())
+
+
+
+
+
+	arrange(WorkplaceREGCName, desc(n))
+
+
+	commute_proportions_by_region %>%
+			filter(CommuteType %in% 'Bicycle') %>%
+			ggplot(aes(x = ResidenceREGCName, y = Percent)) +
+				geom_boxplot()
+
+
+library(rmapshaper) # for simplify (compress polygons)
+polygon_layers[['regional']] <- rmapshaper::ms_simplify(polygon_layers[['regional']])
