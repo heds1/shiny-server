@@ -2,7 +2,6 @@ library(shiny)
 library(dplyr)
 library(leaflet)
 library(ggplot2)
-library(shinycssloaders)
 library(rgdal)
 library(shinyjs) # for disable of load_data button
 
@@ -28,7 +27,7 @@ for (file in dir("./data/line-weights")) {
 	)
 }
 
-#regional council (REGC) polygons are stored in shapefiles, read in here
+# regional council (REGC) polygons are stored in shapefiles, read in here
 polygon_layers <- list()
 
 polygon_layers[['Regional']] <- readOGR(
