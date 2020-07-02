@@ -264,3 +264,48 @@ sudo su - -c "R -e \"install.packages('lubridate', repos='http://cran.rstudio.co
 
 sudo su - -c "R -e \"install.packages('dplyr', repos='http://cran.rstudio.com/')\""
 ```
+
+### 2 July, packages for commuter app
+
+```
+sudo su - -c "R -e \"install.packages('shinyjs', repos='http://cran.rstudio.com/')\""
+```
+
+rgdal requires GDAL and PROJ libraries.
+
+Install libgdal26 (found latest version for this OS by running `apt-cache search libgdal`):
+
+```
+sudo apt install libgdal-dev
+```
+
+I think that pulls in libproj too... so don't have to explicitly install it.
+
+Some more difficulties were had with installing raster... Tried this...
+
+```
+sudo apt install r-api-4.0
+```
+
+After much searching,
+it looks like my droplet simply didn't have enough RAM (it only has 1 GB) to
+install it. Found that here:
+https://community.rstudio.com/t/i-cant-seem-to-install-raster-package-on-ubuntu-16-04-server/31981/4
+
+So I switched it off, and resized to 2 GB memory. Turned it back on, and tried again:
+
+```
+sudo su - -c "R -e \"install.packages('raster', repos='http://cran.rstudio.com/')\""
+```
+
+And it worked! Great. Now try leaflet:
+
+```
+sudo su - -c "R -e \"install.packages('leaflet', repos='http://cran.rstudio.com/')\""
+```
+
+And do rgdal now, since you forgot about it before :)
+
+```
+sudo su - -c "R -e \"install.packages('rgdal', repos='http://cran.rstudio.com/')\""
+```
