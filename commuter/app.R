@@ -6,12 +6,17 @@ library(shinycssloaders)
 library(rgdal)
 library(shinyjs) # for disable of load_data button
 
+# check whether this is local dev or production, set directories appropriately
+base_dir <- ifelse(Sys.getenv("SHINY_DEV") == "True",
+	"C:/Users/hls/code/shiny-server/commuter/",
+	"")
+
 # commuter line data are stored in data/line-matrices/*.txt
 # read these into a list of matrices
 line_matrices <- list()
 for (file in dir("./data/line-matrices")) {
 	line_matrices[[sub('.txt', '', file)]] <- as.matrix(
-		read.table(paste0(getwd(), '/data/line-matrices/', file)))
+		read.table(paste0(base_dir, 'data/line-matrices/', file)))
 }
 
 # commute line weights are stored in data/line-weights/*.csv
@@ -23,26 +28,19 @@ for (file in dir("./data/line-weights")) {
 	)
 }
 
-# territorial authority (TA) and regional council (REGC) polygons are stored in
-# shapefiles, read in here
+#regional council (REGC) polygons are stored in shapefiles, read in here
 polygon_layers <- list()
 
-# polygon_layers[['territorial']] <- readOGR(
-# 	dsn = "C:/Users/hls/code/statsnz/ta",
-#     layer = "territorial-authority-2018-generalised")
-
 polygon_layers[['Regional']] <- readOGR(
-	dsn = "C:/Users/hls/code/statsnz/regc",
+	dsn = paste0(base_dir, "data/regc-layer"),
 	layer = "regional-council-2018-generalised")
 
 # remove " Region" from names
-polygon_layers$Regional$REGC2018_1 <- gsub(" Region", "", polygon_layers$Regional$REGC2018_1 )
+polygon_layers$Regional$REGC2018_1 <- gsub(" Region", "", polygon_layers$Regional$REGC2018_1)
 
-df <- read.csv('C:/Users/hls/code/shiny-server/commuter/data/cleaned-commuter-data.csv')
+regional_coordinates <- read.csv(paste0(base_dir, 'data/regional-coordinates.csv'))
 
-regional_coordinates <- read.csv('C:/Users/hls/code/shiny-server/commuter/data/regional-coordinates.csv')
-
-commute_type_proportions <- read.csv('C:/Users/hls/code/shiny-server/commuter/data/commute-type-proportions.csv', stringsAsFactors = FALSE)
+commute_type_proportions <- read.csv(paste0(base_dir, '/data/commute-type-proportions.csv'), stringsAsFactors = FALSE)
 
 # colors
 #my_pal_hex <- brewer.pal(length(line_matrices), "Paired")
@@ -51,8 +49,6 @@ my_pal_hex <- c(
 	'#E31A1C','#FDBF6F','#FF7F00','#CAB2D6','#6A3D9A')
 names(my_pal_hex) <- names(line_matrices)
 my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
-
-
 
 # function to create stacked barplots
 stacked_plot <- function(dat) {
@@ -73,11 +69,10 @@ stacked_plot <- function(dat) {
 					legend.position = 'none'
 			)
 }
-				
 
 ui <- {
 	tagList(
-		includeCSS('C:/Users/hls/code/shiny-server/commuter/style.css'),
+		includeCSS(paste0(base_dir, 'style.css')),
 		fluidPage(
 			fluidRow(
 				div(class="col-sm-4",
@@ -91,7 +86,8 @@ ui <- {
 								p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
 								p("The lines on the map represent the distance travelled by people using different
 									modes of transport. Thicker lines mean more people used that mode of transport for that particular journey.
-									You can explore the data further by checking out the graphs on the left."),
+									You can explore the data further by checking out the graphs on the left, and toggle specific commute-type layers
+									on and off with the button on the top-right corner of the map."),
 								div(
 									p(style="display:inline", "Click on the button below to get started, or "),
 									actionLink('about_controller',
@@ -143,7 +139,7 @@ ui <- {
 								div(align = "left", class = "multicol",
 									checkboxGroupInput("region_selector",
 										label = NULL,
-										choices = sort(unique(df$ResidenceREGCName)),
+										choices = sort(unique(commute_type_proportions$ResidenceREGCName)),
 										selected = c("Wellington", "Canterbury", "Auckland"),
 										inline = FALSE)
 								),
@@ -193,7 +189,7 @@ server <- function(input, output, session) {
 			addLayersControl(
 				baseGroups = c('None', names(polygon_layers)),
 				overlayGroups = names(my_pal_hex),
-				options = layersControlOptions(collapsed = FALSE)) %>%
+				options = layersControlOptions(collapsed = TRUE)) %>%
 			hideGroup(names(my_pal_hex)) %>%
 			htmlwidgets::onRender("
 				function() {
@@ -222,12 +218,10 @@ server <- function(input, output, session) {
 					group = layer,
 					layerId = polygon_names,
 					opacity = 0.2,
-					fillOpacity = 0.2,
+					fillOpacity = 0.05,
 					highlight = highlightOptions(
 						weight = 5,
-						#color = "#666",
-						#dashArray = "",
-						fillOpacity = 0.7,
+						fillOpacity = 0.2,
 						bringToFront = TRUE))
 			}
 			
