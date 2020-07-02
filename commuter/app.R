@@ -151,6 +151,10 @@ server <- function(input, output, session) {
 		updateTabsetPanel(session, "hidden_tabs", selected = "home_panel")
 	})
 
+	# observeEvent(input$map_shape_click, {
+	# 	updateTabsetPanel(session, "plots", selected = "single_region")
+	# })		
+
 	# the strategy is to just load the base map on instantiation. layers can be
 	# added by proxy, so that server load is not front-loaded.
   	output$map <- renderLeaflet({ 
@@ -231,13 +235,13 @@ server <- function(input, output, session) {
 		this_region <- regional_coordinates[match(click$id, regional_coordinates$id),]
 		
 		updateTabsetPanel(session, "plots", selected = "single_region")
-		
+			
 		# update map with lng/lat/zoom for this region
         leafletProxy("map") %>% 
             setView(
 				lng = this_region$lng,
 				lat = this_region$lat,
-				zoom = this_region$zoom)
+				zoom = 8)
     })
 
 	# render single-region plot
