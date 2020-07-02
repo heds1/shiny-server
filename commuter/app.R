@@ -42,6 +42,8 @@ df <- read.csv('C:/Users/hls/code/shiny-server/commuter/data/cleaned-commuter-da
 
 regional_coordinates <- read.csv('C:/Users/hls/code/shiny-server/commuter/data/regional-coordinates.csv')
 
+commute_type_proportions <- read.csv('C:/Users/hls/code/shiny-server/commuter/data/commute-type-proportions.csv', stringsAsFactors = FALSE)
+
 # colors
 #my_pal_hex <- brewer.pal(length(line_matrices), "Paired")
 my_pal_hex <- c(
@@ -49,6 +51,29 @@ my_pal_hex <- c(
 	'#E31A1C','#FDBF6F','#FF7F00','#CAB2D6','#6A3D9A')
 names(my_pal_hex) <- names(line_matrices)
 my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
+
+
+
+# function to create stacked barplots
+stacked_plot <- function(dat) {
+
+	dat %>%
+		ggplot(aes(x = ResidenceREGCName, y = Proportion, fill = CommuteType)) +
+			geom_col() +
+			scale_fill_manual("Type", values = my_pal_hex) +
+			coord_flip() +
+			theme(
+				plot.title = element_text(hjust = 0.5),
+					panel.grid.major = element_blank(),
+					panel.grid.minor = element_blank(),
+					panel.background = element_blank(),
+					axis.title.y = element_blank(),
+					axis.text.x = element_blank(),
+					axis.ticks.y = element_blank(),
+					legend.position = 'none'
+			)
+}
+				
 
 ui <- {
 	tagList(
@@ -125,6 +150,9 @@ ui <- {
 								plotOutput("compare_regions")),
 							tabPanel(title = "Single region", 
 								value = "single_region",
+								br(),
+								p("Make sure that the regional boundaries layer is selected, then click on a region 
+								to compare it with the national average."),
 								plotOutput("single_region"))
 						)
 					)
@@ -150,10 +178,6 @@ server <- function(input, output, session) {
 	observeEvent(input$home_controller, {
 		updateTabsetPanel(session, "hidden_tabs", selected = "home_panel")
 	})
-
-	# observeEvent(input$map_shape_click, {
-	# 	updateTabsetPanel(session, "plots", selected = "single_region")
-	# })		
 
 	# the strategy is to just load the base map on instantiation. layers can be
 	# added by proxy, so that server load is not front-loaded.
@@ -226,14 +250,14 @@ server <- function(input, output, session) {
 	# zoom to region on click, and also update tabsetPanel to single-region plot
 	# inspiration from SymbolixAU here:
 	# https://stackoverflow.com/questions/42771474/r-shiny-leaflet-click-on-shape-and-zoom-to-bounds-using-maps-package
-	observe({
-        click <- input$map_shape_click
-        if(is.null(click))
-            return()
+	observeEvent(input$map_shape_click, {
+
+		click <- input$map_shape_click
 
 		# get lng/lat/zoom data for this region with click$id
 		this_region <- regional_coordinates[match(click$id, regional_coordinates$id),]
 		
+		# open single_region comparison tabset
 		updateTabsetPanel(session, "plots", selected = "single_region")
 			
 		# update map with lng/lat/zoom for this region
@@ -242,82 +266,41 @@ server <- function(input, output, session) {
 				lng = this_region$lng,
 				lat = this_region$lat,
 				zoom = 8)
-    })
+	})
 
 	# render single-region plot
 	output$single_region <- renderPlot({
-
-		# calculate commute rates averaged over whole of NZ
-		national_comparison <- df %>%
-			group_by(CommuteType) %>%
-			summarise(Sum = sum(Count)) %>%
-			mutate(
-				Proportion = Sum / sum(Sum) * 100,
-				Region = "All of New Zealand")
 
 		# get clicked region
 		click <- input$map_shape_click
 		
 		# if user hasn't clicked on a region, then just show national averages
 		if (is.null(click)) {
-	
-			return() # TODO
+			commute_type_proportions %>%
+				filter(ResidenceREGCName == "All of New Zealand") %>%
+				stacked_plot()
 
 		# otherwise, show regional data comparison with national
 		} else {
-
-			full_join(
-				x = national_comparison,
-				y = df %>%
-					filter(ResidenceREGCName == click$id) %>%
-						group_by(CommuteType) %>%
-						summarise(Sum = sum(Count)) %>%
-						mutate(
-							Proportion = Sum / sum(Sum) * 100,
-							Region = click$id)) %>%
-				ggplot(aes(x = Region, y = Proportion, fill = CommuteType)) +
-					geom_col() +
-					scale_fill_manual("Type", values = my_pal_hex) +
-					coord_flip() +
-					theme(
-						plot.title = element_text(hjust = 0.5),
-							panel.grid.major = element_blank(),
-							panel.grid.minor = element_blank(),
-							panel.background = element_blank(),
-							axis.title.y = element_blank(),
-							axis.text.x = element_blank(),
-							axis.ticks.y = element_blank(),
-							legend.position = 'none'
-					)
-
+			commute_type_proportions %>%
+				filter(ResidenceREGCName %in% c("All of New Zealand", click$id)) %>%
+				stacked_plot()
 		}
-
 	})
 
 	# render multiple-region comparison plot
 	output$compare_regions <- renderPlot({
-		
-			df %>%
+
+		# if nothing is selected, just show national average
+		if (is.null(input$region_selector)) {
+			commute_type_proportions %>%
+				filter(ResidenceREGCName == "All of New Zealand") %>%
+				stacked_plot()
+		} else {
+			commute_type_proportions %>%
 				filter(ResidenceREGCName %in% input$region_selector) %>%
-				group_by(ResidenceREGCName, CommuteType) %>%
-				summarise(Sum = sum(Count)) %>%
-				mutate(Proportion = Sum / sum(Sum) * 100) %>%
-					ggplot() +
-						geom_col(aes(x = ResidenceREGCName, y = Proportion, fill = CommuteType)) +
-						#scale_x_discrete(limits = sort(unique())) +
-						coord_flip() +
-						ggtitle("Commute-type distribution by region") +
-						scale_fill_manual("Type", values = my_pal_hex) +
-						theme(
-							plot.title = element_text(hjust = 0.5),
-							panel.grid.major = element_blank(),
-							panel.grid.minor = element_blank(),
-							panel.background = element_blank(),
-							axis.title.y = element_blank(),
-							axis.text.x = element_blank(),
-							axis.ticks.y = element_blank(),
-							legend.position = 'none')
-		
+				stacked_plot()	
+		}
 	})
 }
 
