@@ -1,0 +1,41 @@
+/* center the progress bar */
+.shiny-notification {
+    position: fixed;
+    top: 33%;
+    left: 33%;
+    right: 33%;
+}
+
+/* add margin to top of page */
+div.container-fluid {
+    margin-top: 20px;
+}
+
+/* align checkboxes. thank you Peter from
+https://stackoverflow.com/questions/29738975/how-to-align-a-group-of-checkboxgroupinput-in-r-shiny
+on mobile just show 3 columns instead of 4.
+*/
+.multicol { 
+    -webkit-column-count: 3; /* Chrome, Safari, Opera */ 
+    -moz-column-count: 3;    /* Firefox */ 
+    column-count: 3; 
+    -moz-column-fill: auto;
+    -column-fill: auto;
+}
+
+@media (min-width: 700px) {
+    .multicol { 
+        -webkit-column-count: 4; /* Chrome, Safari, Opera */ 
+        -moz-column-count: 4;    /* Firefox */ 
+        column-count: 4; 
+        -moz-column-fill: auto;
+        -column-fill: auto;
+    }
+}
+
+/* hide the home/about tabs since updating to new version of Shiny removed the
+option to have hidden-type tabsetPanels... */
+
+#hidden_tabs {
+    display: none;
+}
