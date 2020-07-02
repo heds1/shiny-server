@@ -13,7 +13,7 @@ base_dir <- ifelse(Sys.getenv("SHINY_DEV") == "True",
 # commuter line data are stored in data/line-matrices/*.txt
 # read these into a list of matrices
 line_matrices <- list()
-for (file in dir("./data/line-matrices")) {
+for (file in dir("data/line-matrices")) {
 	line_matrices[[sub('.txt', '', file)]] <- as.matrix(
 		read.table(paste0(base_dir, 'data/line-matrices/', file)))
 }
@@ -21,7 +21,7 @@ for (file in dir("./data/line-matrices")) {
 # commute line weights are stored in data/line-weights/*.csv
 # read these into a list of dfs
 line_weights <- list()
-for (file in dir("./data/line-weights")) {
+for (file in dir("data/line-weights")) {
 	line_weights[[sub('.csv', '', file)]] <- read.csv(
 		paste0(getwd(), '/data/line-weights/', file)
 	)
@@ -39,7 +39,7 @@ polygon_layers$Regional$REGC2018_1 <- gsub(" Region", "", polygon_layers$Regiona
 
 regional_coordinates <- read.csv(paste0(base_dir, 'data/regional-coordinates.csv'))
 
-commute_type_proportions <- read.csv(paste0(base_dir, '/data/commute-type-proportions.csv'), stringsAsFactors = FALSE)
+commute_type_proportions <- read.csv(paste0(base_dir, 'data/commute-type-proportions.csv'), stringsAsFactors = FALSE)
 
 # colors
 #my_pal_hex <- brewer.pal(length(line_matrices), "Paired")
