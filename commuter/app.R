@@ -80,8 +80,8 @@ ui <- {
 						hr(),
 						tabsetPanel(
 							id = "hidden_tabs",
-							type = "hidden",
-							tabPanelBody("home_panel",
+							#type = "hidden",
+							tabPanel("home_panel",
 								p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
 								p("The lines on the map represent the distance travelled by people using different
 									modes of transport. Thicker lines mean more people used that mode of transport for that particular journey.
@@ -97,7 +97,7 @@ ui <- {
 									actionButton('load_data',"Let's get to work!")
 								)
 							),
-							tabPanelBody("about_panel",
+							tabPanel("about_panel",
 								div(style="padding-bottom: 10px;",
 									p(style="display:inline", "This tool uses the "),
 									a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",

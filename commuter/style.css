@@ -32,3 +32,10 @@ on mobile just show 3 columns instead of 4.
         -column-fill: auto;
     }
 }
+
+/* hide the home/about tabs since updating to new version of Shiny removed the
+option to have hidden-type tabsetPanels... */
+
+#hidden_tabs {
+    display: none;
+}
