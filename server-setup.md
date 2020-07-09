@@ -202,9 +202,10 @@ map $http_upgrade $connection_upgrade {
 }
 ```
 
-add directly below server_name _;
+tell nginx to proxy pass to the shiny server (localhost:3838), i.e., route requests at '/' (root) to the shiny server.
+add directly below server_name _;.
 ```
-location /shiny/ {
+location / {
   proxy_pass http://127.0.0.1:3838/;
   proxy_http_version 1.1;
   proxy_set_header Upgrade $http_upgrade;
