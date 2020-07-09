@@ -71,6 +71,7 @@ stacked_plot <- function(dat) {
 
 ui <- {
 	tagList(
+		useShinyjs(),
 		includeCSS(paste0(base_dir, 'style.css')),
 		fluidPage(
 			fluidRow(
