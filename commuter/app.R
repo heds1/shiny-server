@@ -144,23 +144,32 @@ ui <- {
 
 server <- function(input, output, session) {
 
-	# modal
+	# define modal
 	start_modal <- modalDialog(
 		title = "Aotearoa Commuter Visualiser",
 		p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
+		h4('How to use the map'),
 		p("The lines on the map represent the distance travelled by people using different
 			modes of transport. Thicker lines mean more people used that mode of transport for that particular journey.
 			You can explore the data further by checking out the graphs on the left, and toggle specific commute-type layers
 			on and off with the button on the top-right corner of the map."),
+		h4('Where do these data come from?'),
+		div(style="padding-bottom: 10px;",
+			p(style="display:inline", "This tool uses the "),
+			a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
+				"Statistics New Zealand 2018 Census Commuter View dataset"),
+			p(style="display:inline", "to map the journeys of respondents from their place of residence to their place of work.")
+		),
 		size = "l",
 		easyClose = FALSE,
 		fade = TRUE,
 		footer = tagList(
-			modalButton("Cancel"),
-			actionButton("ok", "OK")
+			tags$a(class="btn btn-default", href="https://apps.hedleystirrat.co.nz", "Cancel"),
+			modalButton("OK")
         )
 	)
 
+	# show modal (new modal for each new connection/session)
 	showModal(start_modal)
 
 	# show 'about' panel
@@ -215,54 +224,78 @@ server <- function(input, output, session) {
 			withProgress(message = 'Loading data...', value = 0, {
 
 				n <- 3
+
 				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
+
+				# polygons and lines need to be loaded differently
+				if (added_layer %in% names(polygon_layers)) {
+
+					polygon_names <- as.character(polygon_layers[[added_layer]]@data$REGC2018_1)
+				
+					# add polygons to map
+					map <- leafletProxy("map") %>%
+						addPolygons(data = polygon_layers[[added_layer]],
+						group = added_layer,
+						layerId = polygon_names,
+						opacity = 0.2,
+						fillOpacity = 0,
+						highlight = highlightOptions(
+							weight = 5,
+							fillOpacity = 0.05,
+							bringToFront = TRUE))
+					
+					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
+
+					showNotification("Regional boundaries loaded", type = "message", duration = 10)
+
+				} else {
+
+					# add layer to map
+					map <- leafletProxy("map") %>%
+						addPolylines(data = line_matrices[[added_layer]],
+							group = added_layer,
+							color = my_pal_hex[[added_layer]],
+							weight = line_weights[[added_layer]]$Weight)
+
+					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
+
+					showNotification(paste0(added_layer, " lines loaded"), type = "message", duration = 10)
+				}
 
 				# append to loaded_layers          
 				loaded_layers(c(loaded_layers(), added_layer))
 
 				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
-
-				# add layer to map
-				map <- leafletProxy("map") %>%
-					addPolylines(data = line_matrices[[added_layer]],
-						group = added_layer,
-						color = my_pal_hex[[added_layer]],
-						weight = line_weights[[added_layer]]$Weight)
-
-				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
 			})
-
-			showNotification(paste0(added_layer, " lines loaded"), type = "message", duration = 10)
-
         }
 	})
 
 	# add layers
 	observeEvent(input$load_data, {
 
-			shinyjs::disable('load_data')
+		shinyjs::disable('load_data')
 
-			map <- leafletProxy("map")
+		map <- leafletProxy("map")
+		
+		for (layer in names(polygon_layers)) {
+
+			polygon_names <- as.character(polygon_layers[[layer]]@data$REGC2018_1)
+
+			# append to loaded_layers          
+			loaded_layers(c(loaded_layers(), layer))
 			
-			for (layer in names(polygon_layers)) {
-
-				polygon_names <- as.character(polygon_layers[[layer]]@data$REGC2018_1)
-
-				# append to loaded_layers          
-            	loaded_layers(c(loaded_layers(), layer))
-				
-				# add polygons to map
-				map <- addPolygons(map,
-					data = polygon_layers[[layer]],
-					group = layer,
-					layerId = polygon_names,
-					opacity = 0.2,
-					fillOpacity = 0,
-					highlight = highlightOptions(
-						weight = 5,
-						fillOpacity = 0.05,
-						bringToFront = TRUE))
-			}
+			# add polygons to map
+			map <- addPolygons(map,
+				data = polygon_layers[[layer]],
+				group = layer,
+				layerId = polygon_names,
+				opacity = 0.2,
+				fillOpacity = 0,
+				highlight = highlightOptions(
+					weight = 5,
+					fillOpacity = 0.05,
+					bringToFront = TRUE))
+		}
 
 		showNotification("Regional boundaries loaded", type = "message", duration = 10)
 
