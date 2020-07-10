@@ -4,7 +4,6 @@ library(leaflet)
 library(ggplot2)
 library(rgdal)
 library(shinyjs) # for disable of load_data button
-library(shinycssloaders)
 
 # check whether this is local dev or production, set directories appropriately
 base_dir <- ifelse(Sys.getenv("SHINY_DEV") == "True",
