@@ -187,7 +187,7 @@ server <- function(input, output, session) {
         		pal = my_pal,
 				values = names(my_pal_hex)) %>%
 			addLayersControl(
-				baseGroups = c('None', names(polygon_layers)),
+				#baseGroups = c('None', names(polygon_layers)),
 				overlayGroups = names(my_pal_hex),
 				options = layersControlOptions(collapsed = TRUE)) %>%
 			hideGroup(names(my_pal_hex)) %>%
@@ -197,6 +197,32 @@ server <- function(input, output, session) {
 					$('.leaflet-control-layers-base').prepend('<label style=\"text-align:center;font-weight:700;\">Select area boundaries</label>');
 				}
 			")
+	})
+
+	# loaded_layers is a reactiveVal that starts off empty (no layers loaded),
+	# and is appended to when a new layer is loaded.
+	loaded_layers <- reactiveVal("")
+
+	observeEvent(input$map_groups, {
+		# get all selected layers
+		selected_layers <- input$map_groups
+
+		# check whether any selected layers haven't been loaded
+		added_layer <- selected_layers[!(unlist(selected_layers) %in% loaded_layers())]
+		
+		# if there's a selected but unloaded layer, load it
+		if (length(added_layer) > 0) {
+
+            # append to loaded_layers          
+            loaded_layers(c(loaded_layers(), added_layer))
+
+            # add layer to map
+            map <- leafletProxy("map") %>%
+                addPolylines(data = line_matrices[[added_layer]],
+					group = added_layer,
+					color = my_pal_hex[[added_layer]],
+					weight = line_weights[[added_layer]]$Weight)
+        }
 	})
 
 	# add layers
@@ -212,6 +238,9 @@ server <- function(input, output, session) {
 				polygon_names <- as.character(polygon_layers[[layer]]@data$REGC2018_1)
 
 				incProgress(1/n, paste0("Loading ", layer, " boundaries"))
+
+				# append to loaded_layers          
+            	loaded_layers(c(loaded_layers(), layer))
 				
 				map <- addPolygons(map,
 					data = polygon_layers[[layer]],
@@ -225,16 +254,16 @@ server <- function(input, output, session) {
 						bringToFront = TRUE))
 			}
 			
-			for (i in names(line_matrices)) {
+			# for (i in names(line_matrices)) {
 
-				incProgress(1/n, paste0("Loading ", tolower(i), " layer..."))
+			# 	incProgress(1/n, paste0("Loading ", tolower(i), " layer..."))
 
-				map <- addPolylines(map,
-					data = line_matrices[[i]],
-					group = i,
-					color = my_pal_hex[[i]],
-					weight = line_weights[[i]]$Weight)
-			}
+			# 	map <- addPolylines(map,
+			# 		data = line_matrices[[i]],
+			# 		group = i,
+			# 		color = my_pal_hex[[i]],
+			# 		weight = line_weights[[i]]$Weight)
+			# }
 		})
 
 		return (map)
