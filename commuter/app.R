@@ -199,11 +199,50 @@ server <- function(input, output, session) {
 			")
 	})
 
+	# loaded_layers is a reactiveVal that starts off empty (no layers loaded),
+	# and is appended to when a new layer is loaded.
+	loaded_layers <- reactiveVal("")
+
+	observeEvent(input$map_groups, {
+		# get all selected layers (have to remove "None" from polygon baseGroups
+		selected_layers <- input$map_groups
+		selected_layers <- gsub("None", "", selected_layers)
+
+		# check whether any selected layers haven't been loaded
+		added_layer <- selected_layers[!(unlist(selected_layers) %in% loaded_layers())]
+		
+		# if there's a selected but unloaded layer, load it
+		if (length(added_layer) > 0) {
+
+			withProgress(message = 'Loading data...', value = 0, {
+
+				n <- 3
+				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
+
+				# append to loaded_layers          
+				loaded_layers(c(loaded_layers(), added_layer))
+
+				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
+
+				# add layer to map
+				map <- leafletProxy("map") %>%
+					addPolylines(data = line_matrices[[added_layer]],
+						group = added_layer,
+						color = my_pal_hex[[added_layer]],
+						weight = line_weights[[added_layer]]$Weight)
+
+				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
+			})
+
+			showNotification(paste0(added_layer, " lines loaded"), type = "message", duration = 10)
+
+        }
+	})
+
 	# add layers
 	observeEvent(input$load_data, {
-		shinyjs::disable('load_data')
-		withProgress(message = 'Loading data...', value = 0, {
-			n <- length(line_matrices) + length(polygon_layers)
+
+			shinyjs::disable('load_data')
 
 			map <- leafletProxy("map")
 			
@@ -211,34 +250,25 @@ server <- function(input, output, session) {
 
 				polygon_names <- as.character(polygon_layers[[layer]]@data$REGC2018_1)
 
-				incProgress(1/n, paste0("Loading ", layer, " boundaries"))
+				# append to loaded_layers          
+            	loaded_layers(c(loaded_layers(), layer))
 				
+				# add polygons to map
 				map <- addPolygons(map,
 					data = polygon_layers[[layer]],
 					group = layer,
 					layerId = polygon_names,
 					opacity = 0.2,
-					fillOpacity = 0.05,
+					fillOpacity = 0,
 					highlight = highlightOptions(
 						weight = 5,
-						fillOpacity = 0.2,
+						fillOpacity = 0.05,
 						bringToFront = TRUE))
 			}
-			
-			for (i in names(line_matrices)) {
 
-				incProgress(1/n, paste0("Loading ", tolower(i), " layer..."))
-
-				map <- addPolylines(map,
-					data = line_matrices[[i]],
-					group = i,
-					color = my_pal_hex[[i]],
-					weight = line_weights[[i]]$Weight)
-			}
-		})
+		showNotification("Regional boundaries loaded", type = "message", duration = 10)
 
 		return (map)
-
 	})
 
 	# zoom to region on click, and also update tabsetPanel to single-region plot
