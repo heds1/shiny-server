@@ -102,17 +102,13 @@ ui <- {
 								plotOutput("single_region")
 							),
 							tabPanel(title = "About",
-								# to remove
-								div(style="text-align: center;", 
-									actionButton('load_data',"Let's get to work!")
-								),
+								br(),
 								div(style="padding-bottom: 10px;",
 									p(style="display:inline", "This tool uses the "),
 									a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
 										"Statistics New Zealand 2018 Census Commuter View dataset"),
 									p(style="display:inline", "to map the journeys of respondents from their place of residence to their place of work.")
 								),
-								
 								div(style="padding-bottom: 10px;",
 									p(style="display:inline", "The regional council boundaries were obtained from the "),
 									a(href="https://datafinder.stats.govt.nz/layer/95065-statistical-area-2-higher-geographies-2018-generalised/",
@@ -149,16 +145,18 @@ server <- function(input, output, session) {
 		title = "Aotearoa Commuter Visualiser",
 		p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
 		h4('How to use the map'),
-		p("The lines on the map represent the distance travelled by people using different
-			modes of transport. Thicker lines mean more people used that mode of transport for that particular journey.
-			You can explore the data further by checking out the graphs on the left, and toggle specific commute-type layers
-			on and off with the button on the top-right corner of the map."),
+		p("Use the layer selector button in the top-right corner of the map to load and display different layers."),
+		p("The layers correspond to different modes of transport used by commuters on the Census day. These are 
+			represented by lines on the map that start at the respondents' neighbourhoods and end at their places of work.
+			Thicker lines mean more people used that mode of transport for that particular journey."),
+		p("You can explore the data further by checking out the graphs on the right."),
 		h4('Where do these data come from?'),
 		div(style="padding-bottom: 10px;",
 			p(style="display:inline", "This tool uses the "),
 			a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
 				"Statistics New Zealand 2018 Census Commuter View dataset"),
-			p(style="display:inline", "to map the journeys of respondents from their place of residence to their place of work.")
+			p(style="display:inline", ". For more information about where the data came from and how it's used in this map,
+			refer to the 'About' page.")
 		),
 		size = "l",
 		easyClose = FALSE,
@@ -172,16 +170,6 @@ server <- function(input, output, session) {
 	# show modal (new modal for each new connection/session)
 	showModal(start_modal)
 
-	# show 'about' panel
-	observeEvent(input$about_controller, {
-    	updateTabsetPanel(session, "hidden_tabs", selected = 'about_panel')
-	}) 
-
-	# show home panel
-	observeEvent(input$home_controller, {
-		updateTabsetPanel(session, "hidden_tabs", selected = "home_panel")
-	})
-
 	# the strategy is to just load the base map on instantiation. layers can be
 	# added by proxy, so that server load is not front-loaded.
   	output$map <- renderLeaflet({ 
@@ -189,10 +177,10 @@ server <- function(input, output, session) {
 		map <- leaflet(options = leafletOptions(minZoom = 4)) %>%
 			addTiles() %>%
     		setView(174,-41.2,6) %>%
-			addLegend(
-				position = "bottomleft",
-        		pal = my_pal,
-				values = names(my_pal_hex)) %>%
+			# addLegend(
+			# 	position = "bottomleft",
+        	# 	pal = my_pal,
+			# 	values = names(my_pal_hex)) %>%
 			addLayersControl(
 				baseGroups = c('None', names(polygon_layers)),
 				overlayGroups = names(my_pal_hex),
@@ -211,9 +199,9 @@ server <- function(input, output, session) {
 	loaded_layers <- reactiveVal("")
 
 	observeEvent(input$map_groups, {
-		# get all selected layers (have to remove "None" from polygon baseGroups
+		# get all selected layers (have to remove "None" from polygon baseGroups)
 		selected_layers <- input$map_groups
-		selected_layers <- gsub("None", "", selected_layers)
+		selected_layers <- selected_layers[selected_layers!="None"]
 
 		# check whether any selected layers haven't been loaded
 		added_layer <- selected_layers[!(unlist(selected_layers) %in% loaded_layers())]
@@ -234,20 +222,20 @@ server <- function(input, output, session) {
 				
 					# add polygons to map
 					map <- leafletProxy("map") %>%
-						addPolygons(data = polygon_layers[[added_layer]],
-						group = added_layer,
-						layerId = polygon_names,
-						opacity = 0.2,
-						fillOpacity = 0,
-						highlight = highlightOptions(
-							weight = 5,
-							fillOpacity = 0.05,
-							bringToFront = TRUE))
+							addPolygons(data = polygon_layers[[added_layer]],
+							group = added_layer,
+							layerId = polygon_names,
+							opacity = 0.2,
+							fillOpacity = 0,
+							highlight = highlightOptions(
+								weight = 5,
+								fillOpacity = 0.05,
+								bringToFront = TRUE))
 					
 					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
 
 					showNotification("Regional boundaries loaded", type = "message", duration = 10)
-
+					
 				} else {
 
 					# add layer to map
@@ -255,7 +243,12 @@ server <- function(input, output, session) {
 						addPolylines(data = line_matrices[[added_layer]],
 							group = added_layer,
 							color = my_pal_hex[[added_layer]],
-							weight = line_weights[[added_layer]]$Weight)
+							weight = line_weights[[added_layer]]$Weight) %>%
+						clearControls() %>%
+						addLegend(
+							position = "bottomleft",
+							pal = my_pal,
+							values = selected_layers)
 
 					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
 
