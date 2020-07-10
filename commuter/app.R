@@ -175,12 +175,8 @@ server <- function(input, output, session) {
   	output$map <- renderLeaflet({ 
 
 		map <- leaflet(options = leafletOptions(minZoom = 4)) %>%
-			addTiles() %>%
+			addProviderTiles(providers$CartoDB.Positron) %>%
     		setView(174,-41.2,6) %>%
-			# addLegend(
-			# 	position = "bottomleft",
-        	# 	pal = my_pal,
-			# 	values = names(my_pal_hex)) %>%
 			addLayersControl(
 				baseGroups = c('None', names(polygon_layers)),
 				overlayGroups = names(my_pal_hex),
@@ -243,12 +239,7 @@ server <- function(input, output, session) {
 						addPolylines(data = line_matrices[[added_layer]],
 							group = added_layer,
 							color = my_pal_hex[[added_layer]],
-							weight = line_weights[[added_layer]]$Weight) %>%
-						clearControls() %>%
-						addLegend(
-							position = "bottomleft",
-							pal = my_pal,
-							values = selected_layers)
+							weight = line_weights[[added_layer]]$Weight)
 
 					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
 
@@ -261,6 +252,14 @@ server <- function(input, output, session) {
 				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
 			})
         }
+
+		# update legend
+		leafletProxy("map") %>%
+			clearControls() %>%
+			addLegend(
+				position = "bottomleft",
+				pal = my_pal,
+				values = selected_layers)
 	})
 
 	# add layers
