@@ -235,6 +235,8 @@ server <- function(input, output, session) {
 				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
 			})
 
+			showNotification(paste0(added_layer, " lines loaded"), type = "message", duration = 10)
+
         }
 	})
 
@@ -265,7 +267,7 @@ server <- function(input, output, session) {
 						bringToFront = TRUE))
 			}
 
-		showNotification("Regional boundaries loaded", type = "message")
+		showNotification("Regional boundaries loaded", type = "message", duration = 10)
 
 		return (map)
 	})
