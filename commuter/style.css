@@ -1,11 +1,3 @@
-/* center the progress bar */
-.shiny-notification {
-    position: fixed;
-    top: 33%;
-    left: 33%;
-    right: 33%;
-}
-
 /* add margin to top of page */
 div.container-fluid {
     margin-top: 20px;
