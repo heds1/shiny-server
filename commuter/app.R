@@ -75,30 +75,37 @@ ui <- {
 		includeCSS(paste0(base_dir, 'style.css')),
 		fluidPage(
 			fluidRow(
+				div(class="col-sm-8",
+					tags$form(class='well',
+						leafletOutput('map', height = '90vh'))
+				),
 				div(class="col-sm-4",
 					tags$form(class="well",
-						h3('How Aotearoa Gets to Work', class="display-2", style="text-align: center;"),
-						hr(),
-						tabsetPanel(
-							id = "hidden_tabs",
-							#type = "hidden",
-							tabPanel("home_panel",
-								p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
-								p("The lines on the map represent the distance travelled by people using different
-									modes of transport. Thicker lines mean more people used that mode of transport for that particular journey.
-									You can explore the data further by checking out the graphs on the left, and toggle specific commute-type layers
-									on and off with the button on the top-right corner of the map."),
-								div(
-									p(style="display:inline", "Click on the button below to get started, or "),
-									actionLink('about_controller',
-									"learn more about these data.")
+						tabsetPanel(id = "plots",
+							tabPanel(title = "Compare regions",
+								value = "compare_regions",
+								br(),
+								div(align = "left", class = "multicol",
+									checkboxGroupInput("region_selector",
+										label = NULL,
+										choices = sort(unique(commute_type_proportions$ResidenceREGCName)),
+										selected = c("Wellington", "Canterbury", "Auckland"),
+										inline = FALSE)
 								),
-								hr(),
+								plotOutput("compare_regions")
+							),
+							tabPanel(title = "Single region", 
+								value = "single_region",
+								br(),
+								p("Make sure that the regional boundaries layer is selected, then click on a region 
+								to compare it with the national average."),
+								plotOutput("single_region")
+							),
+							tabPanel(title = "About",
+								# to remove
 								div(style="text-align: center;", 
 									actionButton('load_data',"Let's get to work!")
-								)
-							),
-							tabPanel("about_panel",
+								),
 								div(style="padding-bottom: 10px;",
 									p(style="display:inline", "This tool uses the "),
 									a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
@@ -124,38 +131,10 @@ ui <- {
 									p(style="display:inline", "please use "),
 									a(href="https://www.hedleystirrat.co.nz/about/", "this form "),
 									p(style="display:inline", "to contact the author.")
-								),
-								hr(),
-								div(style="text-align: center",
-									actionButton('home_controller', "Return home"))
+								)
 							)
-						)
-					),
-					tags$form(class="well",
-						tabsetPanel(id = "plots",
-							tabPanel(title = "Compare regions",
-								value = "compare_regions",
-								br(),
-								div(align = "left", class = "multicol",
-									checkboxGroupInput("region_selector",
-										label = NULL,
-										choices = sort(unique(commute_type_proportions$ResidenceREGCName)),
-										selected = c("Wellington", "Canterbury", "Auckland"),
-										inline = FALSE)
-								),
-								plotOutput("compare_regions")),
-							tabPanel(title = "Single region", 
-								value = "single_region",
-								br(),
-								p("Make sure that the regional boundaries layer is selected, then click on a region 
-								to compare it with the national average."),
-								plotOutput("single_region"))
-						)
+						)	
 					)
-				),
-				div(class="col-sm-8",
-					tags$form(class='well',
-						leafletOutput('map', height = '90vh'))
 				)
 			)
 		)
@@ -164,6 +143,25 @@ ui <- {
 
 
 server <- function(input, output, session) {
+
+	# modal
+	start_modal <- modalDialog(
+		title = "Aotearoa Commuter Visualiser",
+		p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
+		p("The lines on the map represent the distance travelled by people using different
+			modes of transport. Thicker lines mean more people used that mode of transport for that particular journey.
+			You can explore the data further by checking out the graphs on the left, and toggle specific commute-type layers
+			on and off with the button on the top-right corner of the map."),
+		size = "l",
+		easyClose = FALSE,
+		fade = TRUE,
+		footer = tagList(
+			modalButton("Cancel"),
+			actionButton("ok", "OK")
+        )
+	)
+
+	showModal(start_modal)
 
 	# show 'about' panel
 	observeEvent(input$about_controller, {
