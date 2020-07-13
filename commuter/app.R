@@ -325,13 +325,13 @@ server <- function(input, output, session) {
 		if (is.null(click)) {
 			commute_type_proportions %>%
 				filter(ResidenceREGCName == "All of New Zealand") %>%
-				stacked_plot()
+				stacked_plot(bar_order = "All of New Zealand")
 
 		# otherwise, show regional data comparison with national
 		} else {
 			commute_type_proportions %>%
 				filter(ResidenceREGCName %in% c("All of New Zealand", click$id)) %>%
-				stacked_plot()
+				stacked_plot(bar_order = c(click$id, "All of New Zealand"))
 		}
 	})
 
@@ -360,8 +360,6 @@ server <- function(input, output, session) {
 		)
 	})
 
-	# render photo
-	# output$my_photo <- renderImage(paste0(base_dir, "img.png"))
 }
 
 shinyApp(ui, server)
