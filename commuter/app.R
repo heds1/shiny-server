@@ -105,8 +105,9 @@ ui <- {
 							),
 							tabPanel(title = "About",
 								br(),
+								h3("About the app"),
 								div(style="padding-bottom: 10px;",
-									p(style="display:inline", "This tool uses the "),
+									p(style="display:inline", "This tool is an R Shiny web-app that uses the open-source Leaflet library to render the interactive map. It uses the "),
 									a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
 										"Statistics New Zealand 2018 Census Commuter View dataset"),
 									p(style="display:inline", "to map the journeys of respondents from their place of residence to their place of work.")
@@ -124,12 +125,14 @@ ui <- {
 										data processing steps, as well as the full code for the application, is open source and 
 										available on the author's "),
 									a(href="https://github.com/heds1/shiny-server/tree/master/commuter", "Github repo"),
-									p(style="display:inline", " for this project. Questions, ideas, bug reports or observations about the weather are all very welcome"),
+									p(style="display:inline", " for this project. Feature requests, bug reports, ideas, questions or observations about the weather are all very welcome"),
 									HTML("&mdash;"),
 									p(style="display:inline", "please use "),
 									a(href="https://www.hedleystirrat.co.nz/about/", "this form "),
 									p(style="display:inline", "to contact the author.")
-								)
+								),
+								h3("About the author"),
+								p("Things")
 							)
 						)	
 					)
