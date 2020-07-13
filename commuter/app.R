@@ -99,6 +99,7 @@ ui <- {
 				),
 				div(class="col-sm-4",
 					tags$form(class="well",
+						style="overflow:auto",
 						tabsetPanel(id = "plots",
 							tabPanel(title = "Compare regions",
 								value = "compare_regions",
@@ -145,7 +146,7 @@ ui <- {
 								),
 								h3("About the author"),
 								div(style="display:inline",
-									a(href="https://hedleystirrat.co.nz/", "Hedley Stirrat"),
+									a(href="https://hedleystirrat.co.nz/", "Hedley"),
 									p(style="display:inline", " enjoys data science, web development, and long, romantic walks on the beach with his dog."),
 									p(style="display:inline", "He wrote this app primarily to avoid weeding the garden.
 									Feature requests, bug reports, ideas, questions or observations about the weather are all very welcome,
@@ -153,7 +154,9 @@ ui <- {
 									a(href="https://www.hedleystirrat.co.nz/about/", "this form."),
 									p(style="display:inline", "Thanks!")
 								),
-								imageOutput("my_photo",)
+								hr(),
+								div(img(id="my_img", src = 'img.jpg', width = '400px')),
+								hr()
 							)
 						)	
 					)
