@@ -50,7 +50,7 @@ names(my_pal_hex) <- names(line_matrices)
 my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
 
 # function to create stacked barplots
-stacked_plot <- function(dat) {
+stacked_plot <- function(dat, bar_order) {
 
 	dat %>%
 		ggplot(aes(x = ResidenceREGCName, y = Proportion, fill = CommuteType)) +
@@ -64,10 +64,28 @@ stacked_plot <- function(dat) {
 					panel.background = element_blank(),
 					axis.title.y = element_blank(),
 					axis.text.x = element_blank(),
-					axis.ticks.y = element_blank(),
-					legend.position = 'none'
-			)
+					axis.ticks.y = element_blank()) +
+			scale_x_discrete(limits = bar_order)
+			# scale_x_discrete(limits = rev(unique(commute_type_proportions$ResidenceREGCName)))
 }
+
+# function to get dataframe of ResidenceREGCName values in order of decreasing
+# proportion of a given commute type
+get_REGC_order <- function(commute_type = NULL) {
+
+	if (is.null(commute_type)) {
+		commute_type <- unique(commute_type_proportions$CommuteType)
+	}
+
+	ordered_df <- commute_type_proportions %>%
+		filter(CommuteType %in% commute_type) %>%
+		filter(ResidenceREGCName != "All of New Zealand") %>%
+		arrange(desc(Proportion)) %>%
+		select(Proportion, ResidenceREGCName)
+
+	return (ordered_df)
+}
+
 
 ui <- {
 	tagList(
@@ -85,13 +103,13 @@ ui <- {
 							tabPanel(title = "Compare regions",
 								value = "compare_regions",
 								br(),
-								div(align = "left", class = "multicol",
-									checkboxGroupInput("region_selector",
-										label = NULL,
-										choices = sort(unique(commute_type_proportions$ResidenceREGCName)),
-										selected = c("Wellington", "Canterbury", "Auckland"),
-										inline = FALSE)
-								),
+								p("This graph compares the distribution of commute types across regions. Select a
+									commute type in the dropdown menu below to see which regions commute by that method the most!"),
+								selectInput("commute_type_sorter",
+									label = NULL,
+									choices = sort(unique(commute_type_proportions$CommuteType)),
+									selected = NULL),
+								textOutput("commute_type_ranking"),
 								br(),
 								plotOutput("compare_regions")
 							),
@@ -104,7 +122,6 @@ ui <- {
 								plotOutput("single_region")
 							),
 							tabPanel(title = "About",
-								br(),
 								h3("About the app"),
 								div(style="padding-bottom: 10px;",
 									p(style="display:inline", "This tool is an R Shiny web-app that uses the open-source Leaflet library to render the interactive map. It uses the "),
@@ -116,23 +133,27 @@ ui <- {
 									p(style="display:inline", "The regional council boundaries were obtained from the "),
 									a(href="https://datafinder.stats.govt.nz/layer/95065-statistical-area-2-higher-geographies-2018-generalised/",
 										"Statistical Area 2 Higher Geographies 2018 dataset."),
-									p(style="display:inline", "The location data were mapped to the regional boundaries by assignment 
+									p(style="display:inline", "The location data were mapped to the regional boundaries by their assignment 
 										into Statistical Area 2 (SA2) zones, which are intended to group the population into defined areas that
 										interact together socioeconomically.")
 								),
 								div(
 									p(style="display:inline", "The data described above was further processed for use within this tool. The code used to reproduce these
 										data processing steps, as well as the full code for the application, is open source and 
-										available on the author's "),
-									a(href="https://github.com/heds1/shiny-server/tree/master/commuter", "Github repo"),
-									p(style="display:inline", " for this project. Feature requests, bug reports, ideas, questions or observations about the weather are all very welcome"),
-									HTML("&mdash;"),
-									p(style="display:inline", "please use "),
-									a(href="https://www.hedleystirrat.co.nz/about/", "this form "),
-									p(style="display:inline", "to contact the author.")
+										available on this project's "),
+									a(href="https://github.com/heds1/shiny-server/tree/master/commuter", "Github repo.")
 								),
 								h3("About the author"),
-								p("Things")
+								div(style="display:inline",
+									a(href="https://hedleystirrat.co.nz/", "Hedley Stirrat"),
+									p(style="display:inline", " enjoys data science, web development, and long, romantic walks on the beach with his dog."),
+									p(style="display:inline", "He wrote this app primarily to avoid weeding the garden.
+									Feature requests, bug reports, ideas, questions or observations about the weather are all very welcome,
+									so if you'd like to get in touch, please use  "),
+									a(href="https://www.hedleystirrat.co.nz/about/", "this form."),
+									p(style="display:inline", "Thanks!")
+								),
+								imageOutput("my_photo",)
 							)
 						)	
 					)
@@ -148,20 +169,23 @@ server <- function(input, output, session) {
 	# define modal
 	start_modal <- modalDialog(
 		title = "Aotearoa Commuter Visualiser",
-		p("Use this tool to explore how Kiwis get to work, based on Census 2018 data."),
+		p("You can use this tool to explore the different ways that Kiwis get to work... and the lengths that some of us go to!"),
 		h4('How to use the map'),
-		p("Use the layer selector button in the top-right corner of the map to load and display different layers."),
-		p("The layers correspond to different modes of transport used by commuters on the Census day. These are 
+		p("The layer-selector button in the top-right corner of the map can be used to load and display the map's layers."),
+		p("The layers correspond to different modes of transport used by commuters on census day 2018. These are 
 			represented by lines on the map that start at the respondents' neighbourhoods and end at their places of work.
-			Thicker lines mean more people used that mode of transport for that particular journey."),
+			Thicker lines mean more people used that mode of transport for that particular journey. (What's the longest journey that you can find?)"),
 		p("You can explore the data further by checking out the graphs on the right."),
 		h4('Where do these data come from?'),
 		div(style="padding-bottom: 10px;",
 			p(style="display:inline", "This tool uses the "),
 			a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
 				"Statistics New Zealand 2018 Census Commuter View dataset."),
-			p(style="display:inline", "For more information about where the data came from and how it's used in this map,
-			check out the About tab on the right!")
+			p(style="display:inline", "For more information about this dataset and how it's used in this map"),
+			HTML("&mdash;"),
+			p(style="display:inline", "as well as the code to reproduce this map yourself!"),
+			HTML("&mdash;"),
+			p(style="display:inline", "check out the About tab about the graphs on the right.")
 		),
 		size = "l",
 		easyClose = FALSE,
@@ -264,7 +288,7 @@ server <- function(input, output, session) {
 			addLegend(
 				position = "bottomleft",
 				pal = my_pal,
-				values = selected_layers)
+				values = selected_layers[selected_layers != "Regional"])
 	})
 
 	# zoom to region on click, and also update tabsetPanel to single-region plot
@@ -311,17 +335,30 @@ server <- function(input, output, session) {
 	# render multiple-region comparison plot
 	output$compare_regions <- renderPlot({
 
-		# if nothing is selected, just show national average
-		if (is.null(input$region_selector)) {
+		REGC_order <- get_REGC_order(input$commute_type_sorter)
+
 			commute_type_proportions %>%
-				filter(ResidenceREGCName == "All of New Zealand") %>%
-				stacked_plot()
-		} else {
-			commute_type_proportions %>%
-				filter(ResidenceREGCName %in% input$region_selector) %>%
-				stacked_plot()	
-		}
+				filter(ResidenceREGCName != "All of New Zealand") %>%
+				stacked_plot(bar_order = rev(REGC_order$ResidenceREGCName))
+
 	})
+
+	# render text of commute type rankings
+	output$commute_type_ranking <- renderText({
+		REGC_order <- get_REGC_order(input$commute_type_sorter)
+
+		paste0("The ", REGC_order$ResidenceREGCName[1], " region (",
+			round(REGC_order$Proportion[1], 1),
+			"%) has the highest proportion of people commuting by ",
+			tolower(input$commute_type_sorter), ", while the ",
+			REGC_order$ResidenceREGCName[nrow(REGC_order)], " region (",
+			round(REGC_order$Proportion[nrow(REGC_order)],1),
+			"%) has the lowest."
+		)
+	})
+
+	# render photo
+	# output$my_photo <- renderImage(paste0(base_dir, "img.png"))
 }
 
 shinyApp(ui, server)
