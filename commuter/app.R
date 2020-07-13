@@ -92,6 +92,7 @@ ui <- {
 										selected = c("Wellington", "Canterbury", "Auckland"),
 										inline = FALSE)
 								),
+								br(),
 								plotOutput("compare_regions")
 							),
 							tabPanel(title = "Single region", 
@@ -99,6 +100,7 @@ ui <- {
 								br(),
 								p("Make sure that the regional boundaries layer is selected, then click on a region 
 								to compare it with the national average."),
+								br(),
 								plotOutput("single_region")
 							),
 							tabPanel(title = "About",
@@ -271,6 +273,9 @@ server <- function(input, output, session) {
 
 		# get lng/lat/zoom data for this region with click$id
 		this_region <- regional_coordinates[match(click$id, regional_coordinates$id),]
+		
+		# open single_region comparison tabset
+		updateTabsetPanel(session, "plots", selected = "single_region")
 				
 		# update map with lng/lat/zoom for this region
         leafletProxy("map") %>% 

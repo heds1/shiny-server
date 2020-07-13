@@ -31,3 +31,8 @@ option to have hidden-type tabsetPanels... */
 #hidden_tabs {
     display: none;
 }
+
+/* set view height of wells */
+.well {
+    height: 95vh;
+}
