@@ -154,9 +154,9 @@ server <- function(input, output, session) {
 		div(style="padding-bottom: 10px;",
 			p(style="display:inline", "This tool uses the "),
 			a(href="https://datafinder.stats.govt.nz/data/category/census/2018/commuter-view/",
-				"Statistics New Zealand 2018 Census Commuter View dataset"),
-			p(style="display:inline", ". For more information about where the data came from and how it's used in this map,
-			refer to the 'About' page.")
+				"Statistics New Zealand 2018 Census Commuter View dataset."),
+			p(style="display:inline", "For more information about where the data came from and how it's used in this map,
+			check out the About tab on the right!")
 		),
 		size = "l",
 		easyClose = FALSE,
@@ -262,38 +262,6 @@ server <- function(input, output, session) {
 				values = selected_layers)
 	})
 
-	# add layers
-	observeEvent(input$load_data, {
-
-		shinyjs::disable('load_data')
-
-		map <- leafletProxy("map")
-		
-		for (layer in names(polygon_layers)) {
-
-			polygon_names <- as.character(polygon_layers[[layer]]@data$REGC2018_1)
-
-			# append to loaded_layers          
-			loaded_layers(c(loaded_layers(), layer))
-			
-			# add polygons to map
-			map <- addPolygons(map,
-				data = polygon_layers[[layer]],
-				group = layer,
-				layerId = polygon_names,
-				opacity = 0.2,
-				fillOpacity = 0,
-				highlight = highlightOptions(
-					weight = 5,
-					fillOpacity = 0.05,
-					bringToFront = TRUE))
-		}
-
-		showNotification("Regional boundaries loaded", type = "message", duration = 10)
-
-		return (map)
-	})
-
 	# zoom to region on click, and also update tabsetPanel to single-region plot
 	# inspiration from SymbolixAU here:
 	# https://stackoverflow.com/questions/42771474/r-shiny-leaflet-click-on-shape-and-zoom-to-bounds-using-maps-package
@@ -303,10 +271,7 @@ server <- function(input, output, session) {
 
 		# get lng/lat/zoom data for this region with click$id
 		this_region <- regional_coordinates[match(click$id, regional_coordinates$id),]
-		
-		# open single_region comparison tabset
-		updateTabsetPanel(session, "plots", selected = "single_region")
-			
+				
 		# update map with lng/lat/zoom for this region
         leafletProxy("map") %>% 
             setView(
