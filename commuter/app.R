@@ -137,8 +137,7 @@ ui <- {
 							tabPanel(title = "Region Detail", 
 								value = "single_region",
 								br(),
-								p("Make sure that the regional boundaries layer is selected, then click on a region 
-								to see a detailed breakdown of how its residents get to work."),
+								span(style = "color:#737373", textOutput("piechart_help_text")),
 								br(),
 								plotOutput("pie_chart", height = "60vh")
 
@@ -206,7 +205,7 @@ server <- function(input, output, session) {
 		p("In addition to the commuter journey lines, you can show or hide the regional council boundaries with the layer toggler. 
 		If the boundaries layer is enabled, clicking anywhere inside a region will zoom you to the center of that region, and open
 		a plot of that region's distribution of commuter types on the right."),
-		p("To get you started, we've already loaded the public bus lines, which you can see as light orange on the map."),
+		p("To get you started, we've already loaded the green public bus lines."),
 		h4('Where do these data come from?'),
 		div(style="padding-bottom: 10px;",
 			p(style="display:inline", "This tool uses the "),
@@ -346,6 +345,14 @@ server <- function(input, output, session) {
 				zoom = 8)
 	})
 
+	# render piechart help text
+	output$piechart_help_text <- renderText({
+		if (is.null(input$map_shape_click)) {
+			"Make sure the regional boundaries layer is turned on, then click on a region to bring up a pie chart
+			showing how its residents get to work."
+		} else return()
+	})
+
 	# render single-region piechart
 	output$pie_chart <- renderPlot({
 
@@ -372,6 +379,7 @@ server <- function(input, output, session) {
 						label.position = "bottom",
 						keywidth = 3,
 						nrow=4)) +
+				ggtitle(click$id) +
 				theme(
 					panel.grid.major = element_blank(),
 					panel.grid.minor = element_blank(),
@@ -380,7 +388,8 @@ server <- function(input, output, session) {
 					axis.title.x = element_blank(),
 					axis.text.x = element_blank(),
 					axis.ticks.y = element_blank(),
-					legend.position = "bottom") 
+					legend.position = "bottom",
+					plot.title = element_text(hjust = 0.5)) 
 
 		}
 	})
