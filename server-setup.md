@@ -310,3 +310,11 @@ And do rgdal now, since you forgot about it before :)
 ```
 sudo su - -c "R -e \"install.packages('rgdal', repos='http://cran.rstudio.com/')\""
 ```
+
+### 14 July 2020 add plotly package
+
+```
+sudo su - -c "R -e \"install.packages('plotly', repos='http://cran.rstudio.com/')\""
+```
+
+Also rebooted the servers at this point with `systemctl reboot -i`
