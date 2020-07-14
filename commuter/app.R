@@ -34,7 +34,7 @@ polygon_layers[['Regional']] <- readOGR(
 	dsn = paste0(base_dir, "data/regc-layer"),
 	layer = "regional-council-2018-generalised")
 
-# remove " Region" from names
+# remove "Region" from names
 polygon_layers$Regional$REGC2018_1 <- gsub(" Region", "", polygon_layers$Regional$REGC2018_1)
 
 regional_coordinates <- read.csv(paste0(base_dir, 'data/regional-coordinates.csv'))
@@ -43,9 +43,13 @@ commute_type_proportions <- read.csv(paste0(base_dir, 'data/commute-type-proport
 
 # colors
 #my_pal_hex <- brewer.pal(length(line_matrices), "Paired")
+# my_pal_hex <- c(
+# 	'#A6CEE3','#1F78B4','#B2DF8A','#33A02C','#FB9A99',
+# 	'#E31A1C','#FDBF6F','#FF7F00','#CAB2D6','#6A3D9A')
+# brewer.pal(10, "Set3")
 my_pal_hex <- c(
-	'#A6CEE3','#1F78B4','#B2DF8A','#33A02C','#FB9A99',
-	'#E31A1C','#FDBF6F','#FF7F00','#CAB2D6','#6A3D9A')
+	"#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072", "#80B1D3",
+	"#FDB462", "#B3DE69", "#FCCDE5", "#D9D9D9", "#BC80BD")
 names(my_pal_hex) <- names(line_matrices)
 my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
 
@@ -53,20 +57,33 @@ my_pal <- colorFactor(my_pal_hex, domain = names(my_pal_hex))
 stacked_plot <- function(dat, bar_order) {
 
 	dat %>%
+		# reorder CommuteType levels so plotted in alphabetical order
+		mutate(CommuteType = factor(CommuteType, levels = rev(unique(dat$CommuteType)))) %>%
 		ggplot(aes(x = ResidenceREGCName, y = Proportion, fill = CommuteType)) +
 			geom_col() +
-			scale_fill_manual("Type", values = my_pal_hex) +
+			scale_fill_manual(
+				breaks = unique(dat$CommuteType), # specify alphabetical order ascending
+				values = my_pal_hex,
+				guide = guide_legend(
+					title = NULL,
+					label.position = "bottom",
+					keywidth = 3,
+					nrow=4)) +
 			coord_flip() +
 			theme(
 				plot.title = element_text(hjust = 0.5),
-					panel.grid.major = element_blank(),
-					panel.grid.minor = element_blank(),
-					panel.background = element_blank(),
-					axis.title.y = element_blank(),
-					axis.text.x = element_blank(),
-					axis.ticks.y = element_blank()) +
-			scale_x_discrete(limits = bar_order)
-			# scale_x_discrete(limits = rev(unique(commute_type_proportions$ResidenceREGCName)))
+				panel.grid.major = element_blank(),
+				panel.grid.minor = element_blank(),
+				panel.background = element_blank(),
+				axis.title.y = element_blank(),
+				axis.text.x = element_blank(),
+				axis.ticks.y = element_blank(),
+				plot.background = element_rect(fill = "#f5f5f5"),
+				legend.background = element_rect(fill = "#f5f5f5"),
+				legend.position = "bottom",
+				) +
+			scale_x_discrete(limits = bar_order) +
+			scale_y_discrete(expand = c(0,0)) # remove padding between REGC names and bars
 }
 
 # function to get dataframe of ResidenceREGCName values in order of decreasing
@@ -101,7 +118,7 @@ ui <- {
 					tags$form(class="well",
 						style="overflow:auto",
 						tabsetPanel(id = "plots",
-							tabPanel(title = "Compare regions",
+							tabPanel(title = "Regional Comparisons",
 								value = "compare_regions",
 								br(),
 								p("This graph compares the distribution of commute types across regions. Select a
@@ -112,15 +129,19 @@ ui <- {
 									selected = NULL),
 								textOutput("commute_type_ranking"),
 								br(),
-								plotOutput("compare_regions")
+								div(
+									plotOutput("compare_regions", height = "60vh")
+								)
+								
 							),
-							tabPanel(title = "Single region", 
+							tabPanel(title = "Region Detail", 
 								value = "single_region",
 								br(),
-								p("Make sure that the regional boundaries layer is selected, then click on a region 
-								to compare it with the national average."),
+								span(style = "color:#737373", textOutput("piechart_help_text")),
 								br(),
-								plotOutput("single_region")
+								plotOutput("pie_chart", height = "60vh")
+
+								
 							),
 							tabPanel(title = "About",
 								h3("About the app"),
@@ -177,10 +198,14 @@ server <- function(input, output, session) {
 		p("The layer-selector button in the top-right corner of the map can be used to load and display the map's layers."),
 		p("The layers correspond to different modes of transport used by commuters on census day 2018. These are 
 			represented by lines on the map that start at the respondents' neighbourhoods and end at their places of work.
-			Thicker lines mean more people used that mode of transport for that particular journey. (What's the longest journey that you can find?)"),
+			Thicker lines mean more people used that mode of transport for that particular journey."),
+		p("The data are grouped into what we can think of as neighbourhoods. If the respondent lived
+		and worked in the same neighbourhood, then they'll be shown as a dot on the map, rather than a line.
+		(You can see this with the 'walk or jog' commuters, or, more clearly, the 'work at home' respondents!)"),
 		p("In addition to the commuter journey lines, you can show or hide the regional council boundaries with the layer toggler. 
 		If the boundaries layer is enabled, clicking anywhere inside a region will zoom you to the center of that region, and open
 		a plot of that region's distribution of commuter types on the right."),
+		p("To get you started, we've already loaded the green public bus lines."),
 		h4('Where do these data come from?'),
 		div(style="padding-bottom: 10px;",
 			p(style="display:inline", "This tool uses the "),
@@ -215,7 +240,8 @@ server <- function(input, output, session) {
 				baseGroups = c('None', names(polygon_layers)),
 				overlayGroups = names(my_pal_hex),
 				options = layersControlOptions(collapsed = TRUE)) %>%
-			hideGroup(names(my_pal_hex)) %>%
+			# only load public bus on instantiation
+			hideGroup(names(my_pal_hex)[names(my_pal_hex)!="Public bus"]) %>%
 			htmlwidgets::onRender("
 				function() {
 					$('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:center;font-weight:700;\">Select commuter types</label>');
@@ -229,6 +255,7 @@ server <- function(input, output, session) {
 	loaded_layers <- reactiveVal("")
 
 	observeEvent(input$map_groups, {
+
 		# get all selected layers (have to remove "None" from polygon baseGroups)
 		selected_layers <- input$map_groups
 		selected_layers <- selected_layers[selected_layers!="None"]
@@ -259,7 +286,8 @@ server <- function(input, output, session) {
 							fillOpacity = 0,
 							highlight = highlightOptions(
 								weight = 5,
-								fillOpacity = 0.05,
+								opacity = .5,
+								color = "black",
 								bringToFront = TRUE))
 					
 					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
@@ -291,7 +319,7 @@ server <- function(input, output, session) {
 		leafletProxy("map") %>%
 			clearControls() %>%
 			addLegend(
-				position = "bottomleft",
+				position = "bottomright",
 				pal = my_pal,
 				values = selected_layers[selected_layers != "Regional"])
 	})
@@ -317,23 +345,52 @@ server <- function(input, output, session) {
 				zoom = 8)
 	})
 
-	# render single-region plot
-	output$single_region <- renderPlot({
+	# render piechart help text
+	output$piechart_help_text <- renderText({
+		if (is.null(input$map_shape_click)) {
+			"Make sure the regional boundaries layer is turned on, then click on a region to bring up a pie chart
+			showing how its residents get to work."
+		} else return()
+	})
+
+	# render single-region piechart
+	output$pie_chart <- renderPlot({
 
 		# get clicked region
 		click <- input$map_shape_click
-		
-		# if user hasn't clicked on a region, then just show national averages
-		if (is.null(click)) {
-			commute_type_proportions %>%
-				filter(ResidenceREGCName == "All of New Zealand") %>%
-				stacked_plot(bar_order = "All of New Zealand")
 
-		# otherwise, show regional data comparison with national
+		# if user hasn't clicked on a region, don't show anything
+		if (is.null(click)) {
+			return()
+
+		# otherwise, show piechart
 		} else {
+
 			commute_type_proportions %>%
-				filter(ResidenceREGCName %in% c("All of New Zealand", click$id)) %>%
-				stacked_plot(bar_order = c(click$id, "All of New Zealand"))
+			filter(ResidenceREGCName == click$id) %>%
+			ggplot(aes(x = "", y = Proportion, fill = CommuteType)) +
+				geom_col() +
+				coord_polar("y", start=0) +
+				scale_fill_manual(
+					breaks = sort(unique(commute_type_proportions$CommuteType)), # specify alphabetical order ascending
+					values = my_pal_hex,
+					guide = guide_legend(
+						title = NULL,
+						label.position = "bottom",
+						keywidth = 3,
+						nrow=4)) +
+				ggtitle(click$id) +
+				theme(
+					panel.grid.major = element_blank(),
+					panel.grid.minor = element_blank(),
+					panel.background = element_blank(),
+					axis.title.y = element_blank(),
+					axis.title.x = element_blank(),
+					axis.text.x = element_blank(),
+					axis.ticks.y = element_blank(),
+					legend.position = "bottom",
+					plot.title = element_text(hjust = 0.5)) 
+
 		}
 	})
 
