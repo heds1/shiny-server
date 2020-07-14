@@ -236,7 +236,7 @@ server <- function(input, output, session) {
 			addProviderTiles(providers$CartoDB.Positron) %>%
     		setView(174,-41.2,6) %>%
 			addLayersControl(
-				baseGroups = c('None', names(polygon_layers)),
+				baseGroups = c(names(polygon_layers), 'None'),
 				overlayGroups = names(my_pal_hex),
 				options = layersControlOptions(collapsed = TRUE)) %>%
 			hideGroup(names(my_pal_hex)[names(my_pal_hex)!="Public bus"]) %>%
@@ -262,50 +262,65 @@ server <- function(input, output, session) {
 		# check whether any selected layers haven't been loaded
 		added_layer <- selected_layers[!(unlist(selected_layers) %in% loaded_layers())]
 		
+		# two layers loaded on map creation
+		if (length(added_layer) == 2) {
+
+			withProgress(message = 'Loading data...', value = 0, {
+
+				n <- 4
+				incProgress(1/n, "Loading initial layers...")
+				polygon_names <- as.character(polygon_layers[["Regional"]]@data$REGC2018_1)
+			
+				# add polygons to map
+				map <- leafletProxy("map") %>%
+						addPolygons(data = polygon_layers[["Regional"]],
+						group = "Regional",
+						layerId = polygon_names,
+						opacity = 0.2,
+						fillOpacity = 0,
+						highlight = highlightOptions(
+							weight = 5,
+							opacity = .5,
+							color = "black",
+							bringToFront = TRUE))
+				
+				incProgress(1/n, "Loading initial layers...")
+
+				# add public bus line layer to map
+				map <- leafletProxy("map") %>%
+					addPolylines(data = line_matrices[["Public bus"]],
+						group = "Public bus",
+						color = my_pal_hex[["Public bus"]],
+						weight = line_weights[["Public bus"]]$Weight)
+
+				incProgress(1/n, "Loading initial layers...")
+
+				# append to loaded_layers          
+				loaded_layers(c(loaded_layers(), added_layer))
+
+				incProgress(1/n, "Loading initial layers...")
+				showNotification("Initial layers loaded", type = "message", duration = 10)
+			})
+		}
+		
 		# if there's a selected but unloaded layer, load it
-		if (length(added_layer) > 0) {
+		if (length(added_layer) == 1) {
 
 			withProgress(message = 'Loading data...', value = 0, {
 
 				n <- 3
+				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
+
+				# add line layer to map
+				map <- leafletProxy("map") %>%
+					addPolylines(data = line_matrices[[added_layer]],
+						group = added_layer,
+						color = my_pal_hex[[added_layer]],
+						weight = line_weights[[added_layer]]$Weight)
 
 				incProgress(1/n, paste0("Loading ", tolower(added_layer)))
 
-				# polygons and lines need to be loaded differently
-				if (added_layer %in% names(polygon_layers)) {
-
-					polygon_names <- as.character(polygon_layers[[added_layer]]@data$REGC2018_1)
-				
-					# add polygons to map
-					map <- leafletProxy("map") %>%
-							addPolygons(data = polygon_layers[[added_layer]],
-							group = added_layer,
-							layerId = polygon_names,
-							opacity = 0.2,
-							fillOpacity = 0,
-							highlight = highlightOptions(
-								weight = 5,
-								opacity = .5,
-								color = "black",
-								bringToFront = TRUE))
-					
-					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
-
-					showNotification("Regional boundaries loaded", type = "message", duration = 10)
-					
-				} else {
-
-					# add layer to map
-					map <- leafletProxy("map") %>%
-						addPolylines(data = line_matrices[[added_layer]],
-							group = added_layer,
-							color = my_pal_hex[[added_layer]],
-							weight = line_weights[[added_layer]]$Weight)
-
-					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
-
-					showNotification(paste0(added_layer, " lines loaded"), type = "message", duration = 10)
-				}
+				showNotification(paste0(added_layer, " lines loaded"), type = "message", duration = 10)
 
 				# append to loaded_layers          
 				loaded_layers(c(loaded_layers(), added_layer))
