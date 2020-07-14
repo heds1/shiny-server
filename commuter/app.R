@@ -178,7 +178,9 @@ server <- function(input, output, session) {
 		p("The layers correspond to different modes of transport used by commuters on census day 2018. These are 
 			represented by lines on the map that start at the respondents' neighbourhoods and end at their places of work.
 			Thicker lines mean more people used that mode of transport for that particular journey. (What's the longest journey that you can find?)"),
-		p("You can explore the data further by checking out the graphs on the right."),
+		p("In addition to the commuter journey lines, you can show or hide the regional council boundaries with the layer toggler. 
+		If the boundaries layer is enabled, clicking anywhere inside a region will zoom you to the center of that region, and open
+		a plot of that region's distribution of commuter types on the right."),
 		h4('Where do these data come from?'),
 		div(style="padding-bottom: 10px;",
 			p(style="display:inline", "This tool uses the "),
@@ -188,7 +190,7 @@ server <- function(input, output, session) {
 			HTML("&mdash;"),
 			p(style="display:inline", "as well as the code to reproduce this map yourself!"),
 			HTML("&mdash;"),
-			p(style="display:inline", "check out the About tab about the graphs on the right.")
+			p(style="display:inline", "check out the About tab on the right.")
 		),
 		size = "l",
 		easyClose = FALSE,
