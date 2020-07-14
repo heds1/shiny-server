@@ -4,6 +4,7 @@ library(leaflet)
 library(ggplot2)
 library(rgdal)
 library(shinyjs) # for disable of load_data button
+library(plotly)
 
 # check whether this is local dev or production, set directories appropriately
 base_dir <- ifelse(Sys.getenv("SHINY_DEV") == "True",
@@ -139,7 +140,7 @@ ui <- {
 								br(),
 								span(style = "color:#737373", textOutput("piechart_help_text")),
 								br(),
-								plotOutput("pie_chart", height = "60vh")
+								plotlyOutput("pie_chart", height = "70vh")
 
 								
 							),
@@ -175,8 +176,6 @@ ui <- {
 									a(href="https://www.hedleystirrat.co.nz/about/", "this form."),
 									p(style="display:inline", "Thanks!")
 								),
-								hr(),
-								div(img(id="my_img", src = 'img.jpg', width = '400px')),
 								hr()
 							)
 						)	
@@ -240,8 +239,8 @@ server <- function(input, output, session) {
 				baseGroups = c('None', names(polygon_layers)),
 				overlayGroups = names(my_pal_hex),
 				options = layersControlOptions(collapsed = TRUE)) %>%
-			# only load public bus on instantiation
 			hideGroup(names(my_pal_hex)[names(my_pal_hex)!="Public bus"]) %>%
+			# add titles to layers control with js
 			htmlwidgets::onRender("
 				function() {
 					$('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:center;font-weight:700;\">Select commuter types</label>');
@@ -354,7 +353,7 @@ server <- function(input, output, session) {
 	})
 
 	# render single-region piechart
-	output$pie_chart <- renderPlot({
+	output$pie_chart <- renderPlotly({
 
 		# get clicked region
 		click <- input$map_shape_click
@@ -367,29 +366,16 @@ server <- function(input, output, session) {
 		} else {
 
 			commute_type_proportions %>%
-			filter(ResidenceREGCName == click$id) %>%
-			ggplot(aes(x = "", y = Proportion, fill = CommuteType)) +
-				geom_col() +
-				coord_polar("y", start=0) +
-				scale_fill_manual(
-					breaks = sort(unique(commute_type_proportions$CommuteType)), # specify alphabetical order ascending
-					values = my_pal_hex,
-					guide = guide_legend(
-						title = NULL,
-						label.position = "bottom",
-						keywidth = 3,
-						nrow=4)) +
-				ggtitle(click$id) +
-				theme(
-					panel.grid.major = element_blank(),
-					panel.grid.minor = element_blank(),
-					panel.background = element_blank(),
-					axis.title.y = element_blank(),
-					axis.title.x = element_blank(),
-					axis.text.x = element_blank(),
-					axis.ticks.y = element_blank(),
-					legend.position = "bottom",
-					plot.title = element_text(hjust = 0.5)) 
+				filter(ResidenceREGCName == click$id) %>%
+				plot_ly(
+					labels = ~CommuteType,
+					values = ~Proportion,
+					type = 'pie') %>%
+				layout(title = click$id,
+					xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+					yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+					paper_bgcolor = "#f5f5f5",
+					legend = list(x = 0.35, y = -.6))
 
 		}
 	})
@@ -402,6 +388,7 @@ server <- function(input, output, session) {
 			commute_type_proportions %>%
 				filter(ResidenceREGCName != "All of New Zealand") %>%
 				stacked_plot(bar_order = rev(REGC_order$ResidenceREGCName))
+			
 
 	})
 
