@@ -177,10 +177,14 @@ server <- function(input, output, session) {
 		p("The layer-selector button in the top-right corner of the map can be used to load and display the map's layers."),
 		p("The layers correspond to different modes of transport used by commuters on census day 2018. These are 
 			represented by lines on the map that start at the respondents' neighbourhoods and end at their places of work.
-			Thicker lines mean more people used that mode of transport for that particular journey. (What's the longest journey that you can find?)"),
+			Thicker lines mean more people used that mode of transport for that particular journey."),
+		p("The data are grouped into what we can think of as neighbourhoods. If the respondent lived
+		and worked in the same neighbourhood, then they'll be shown as a dot on the map, rather than a line.
+		(You can see this with the 'walk or jog' commuters, or, more clearly, the 'work at home' respondents!)"),
 		p("In addition to the commuter journey lines, you can show or hide the regional council boundaries with the layer toggler. 
 		If the boundaries layer is enabled, clicking anywhere inside a region will zoom you to the center of that region, and open
 		a plot of that region's distribution of commuter types on the right."),
+		p("To get you started, we've already loaded the public bus lines, which you can see as light orange on the map."),
 		h4('Where do these data come from?'),
 		div(style="padding-bottom: 10px;",
 			p(style="display:inline", "This tool uses the "),
@@ -215,7 +219,8 @@ server <- function(input, output, session) {
 				baseGroups = c('None', names(polygon_layers)),
 				overlayGroups = names(my_pal_hex),
 				options = layersControlOptions(collapsed = TRUE)) %>%
-			hideGroup(names(my_pal_hex)) %>%
+			# only load public bus on instantiation
+			hideGroup(names(my_pal_hex)[names(my_pal_hex)!="Public bus"]) %>%
 			htmlwidgets::onRender("
 				function() {
 					$('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:center;font-weight:700;\">Select commuter types</label>');
@@ -229,6 +234,7 @@ server <- function(input, output, session) {
 	loaded_layers <- reactiveVal("")
 
 	observeEvent(input$map_groups, {
+
 		# get all selected layers (have to remove "None" from polygon baseGroups)
 		selected_layers <- input$map_groups
 		selected_layers <- selected_layers[selected_layers!="None"]
