@@ -62,7 +62,6 @@ stacked_plot <- function(dat, bar_order) {
 		ggplot(aes(x = ResidenceREGCName, y = Proportion, fill = CommuteType)) +
 			geom_col() +
 			scale_fill_manual(
-				
 				breaks = unique(dat$CommuteType), # specify alphabetical order ascending
 				values = my_pal_hex,
 				guide = guide_legend(
@@ -119,7 +118,7 @@ ui <- {
 					tags$form(class="well",
 						style="overflow:auto",
 						tabsetPanel(id = "plots",
-							tabPanel(title = "Compare regions",
+							tabPanel(title = "Regional Comparisons",
 								value = "compare_regions",
 								br(),
 								p("This graph compares the distribution of commute types across regions. Select a
@@ -135,13 +134,15 @@ ui <- {
 								)
 								
 							),
-							tabPanel(title = "Single region", 
+							tabPanel(title = "Region Detail", 
 								value = "single_region",
 								br(),
 								p("Make sure that the regional boundaries layer is selected, then click on a region 
-								to compare it with the national average."),
+								to see a detailed breakdown of how its residents get to work."),
 								br(),
-								plotOutput("single_region")
+								plotOutput("pie_chart", height = "60vh")
+
+								
 							),
 							tabPanel(title = "About",
 								h3("About the app"),
@@ -344,23 +345,42 @@ server <- function(input, output, session) {
 				zoom = 8)
 	})
 
-	# render single-region plot
-	output$single_region <- renderPlot({
+	# render single-region piechart
+	output$pie_chart <- renderPlot({
 
 		# get clicked region
 		click <- input$map_shape_click
-		
-		# if user hasn't clicked on a region, then just show national averages
-		if (is.null(click)) {
-			commute_type_proportions %>%
-				filter(ResidenceREGCName == "All of New Zealand") %>%
-				stacked_plot(bar_order = "All of New Zealand")
 
-		# otherwise, show regional data comparison with national
+		# if user hasn't clicked on a region, don't show anything
+		if (is.null(click)) {
+			return()
+
+		# otherwise, show piechart
 		} else {
+
 			commute_type_proportions %>%
-				filter(ResidenceREGCName %in% c("All of New Zealand", click$id)) %>%
-				stacked_plot(bar_order = c(click$id, "All of New Zealand"))
+			filter(ResidenceREGCName == click$id) %>%
+			ggplot(aes(x = "", y = Proportion, fill = CommuteType)) +
+				geom_col() +
+				coord_polar("y", start=0) +
+				scale_fill_manual(
+					breaks = sort(unique(commute_type_proportions$CommuteType)), # specify alphabetical order ascending
+					values = my_pal_hex,
+					guide = guide_legend(
+						title = NULL,
+						label.position = "bottom",
+						keywidth = 3,
+						nrow=4)) +
+				theme(
+					panel.grid.major = element_blank(),
+					panel.grid.minor = element_blank(),
+					panel.background = element_blank(),
+					axis.title.y = element_blank(),
+					axis.title.x = element_blank(),
+					axis.text.x = element_blank(),
+					axis.ticks.y = element_blank(),
+					legend.position = "bottom") 
+
 		}
 	})
 
