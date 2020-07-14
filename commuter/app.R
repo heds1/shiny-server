@@ -287,7 +287,8 @@ server <- function(input, output, session) {
 							fillOpacity = 0,
 							highlight = highlightOptions(
 								weight = 5,
-								fillOpacity = 0.1,
+								opacity = .5,
+								color = "black",
 								bringToFront = TRUE))
 					
 					incProgress(1/n, paste0("Loading ", tolower(added_layer)))
