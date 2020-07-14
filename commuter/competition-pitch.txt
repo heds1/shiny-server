@@ -1,0 +1,22 @@
+The Aotearoa Commuter Visualiser shows the journeys from home to work
+that Kiwis took on Census day 2018. The journeys are represented by direct
+lines, and the different commute types can be toggled on or off, allowing an
+easy comparison of the different ways we get to work. A layer showing the
+regional council boundaries can also be toggled, and clicking on a region
+brings up a summary of the region's distribution of commute types.
+
+Two Stats NZ datasets were used in the creation of this map. The commuter data was
+extracted from the "2018 Census Main means of travel to education by Statistical
+Area 2" dataset, while the regional council layer was extracted from the
+"Statistical Area 2 Higher Geographies 2018 (generalised)" dataset. The data
+were grouped by unique residence/workplace combinations so that the displayed
+lines could take on different weights depending on the number of people taking
+that particular journey.
+
+The product is an R Shiny application that uses the Leaflet library to render an
+interactive map. The code used to process the data and run the app is free and
+open source, and the app is deployed onto cloud servers that can be scaled up
+and down quickly and efficiently to allow for greater or lesser web traffic.
+
+The map can easily be updated with new features, and community contributions and
+feature requests are welcomed.

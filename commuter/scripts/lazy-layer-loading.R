@@ -1,3 +1,5 @@
+# proof of concept: load layers when they're clicked on, and not before :)
+
 library(shiny)
 library(leaflet)
 
@@ -25,26 +27,6 @@ server <- function(input, output, session) {
         input$map_groups
     })
 
-    # # # observer to track when addPolylines calls need to be done
-    # observe({
-    #     selected_groups <- req(input$map_groups)
-      
-
-    # })
-
-    # current_lines <- eventReactive(input$map_groups, {
-    #     paste0(input$map_groups)
-    # })
-
-    # output$cur <- renderText(current_lines)
-
-
-    # need to look at selected groups and load data if the group is not loaded
-
-
-    # output$selected_groups <- renderText({
-    #     my_grps
-    # })
 
     # loaded_layers starts off empty. appended to when a new layer is added.
     loaded_layers <- reactiveVal("empty")
@@ -56,8 +38,6 @@ server <- function(input, output, session) {
     observeEvent(input$map_groups, {
 
         selected_layers <- input$map_groups
-        # loaded_layers <- c("One","Three")
-        # selected_layers <- c("One","Two")
 
         # get unloaded layers if there are any
         layer_to_add <- selected_layers[!(unlist(selected_layers) %in% loaded_layers())]
