@@ -9,11 +9,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap CSS and JS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 
     <!-- Personal CSS -->
     <link rel="stylesheet" href="./css/style.css" />
+
+    <!-- favicon -->
+    <link rel="shortcut icon" tyep="image/png" href="./img/favicon.ico">
 
 </head>
 
@@ -31,15 +37,15 @@
 
     <div class="wrapper">
 
-        <nav class="navbar navbar-light navbar-expand-md bg-light justify-content-md-center justify-content-end">
-            <button class="navbar-toggler ml-1" type="button" data-toggle="collapse" data-target="#collapsingNavbar2">
-                <span class="navbar-toggler-icon"></span>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" style="margin-right:0", href="https://hedleystirrat.co.nz">
+                <img src="./img/favicon.ico">
+            </a>
+            <button class="navbar-toggler" type="button" style="border-color:transparent;" data-toggle="collapse" data-target="#main-navbar-links" aria-controls="main-navbar-links" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
             </button>
-            <!-- <a class="nav-link" href="#"><i class="fa fa-search mr-1"></i></a>  -->
-            <div class="navbar-collapse collapse justify-content-between align-items-center w-100" id="collapsingNavbar2">
-                <ul class="nav navbar-nav flex-row justify-content-md-center justify-content-start flex-nowrap" style="width: 184px;">
-                </ul>
-                <ul class="navbar-nav mx-auto text-md-center text-left">
+            <div class="collapse navbar-collapse" id="main-navbar-links">
+                <ul class="navbar-nav mx-auto text-md-center text-right">
                     <li class="nav-item">
                         <a class="nav-link" href="https://hedleystirrat.co.nz">Home</a>
                     </li>
@@ -50,26 +56,7 @@
                         <a class="nav-link" href="https://hedleystirrat.co.nz/about/">About</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="https://apps.hedleystirrat.co.nz/">Apps</a>
-                    </li>
-                </ul>
-                <ul class="nav navbar-nav flex-row justify-content-md-center
-                justify-content-center flex-nowrap" style="padding-top: 10px;
-                padding-bottom: 10px;">
-                    <li class="nav-item">
-                        <a href="https://github.com/heds1">
-                            <img src="./img/github.png" style="width: 27px; height:27px" />
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="https://www.linkedin.com/in/hedley-stirrat-4b26b2117/">
-                            <img src="./img/linkedin.png" style="width: 30px; height:27px" />
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="https://stackoverflow.com/users/7978445/heds1">
-                            <img src="./img/so.png" style="width: 27px; height:27px" />
-                        </a>
+                        <a class="nav-link" style="font-weight: 700;" href="https://apps.hedleystirrat.co.nz/">Apps</a>
                     </li>
                 </ul>
             </div>
@@ -109,31 +96,32 @@
                 <p>Financial independence/early retirement (FI/RE) is a goal for
                 many people. This app can be used to make projections for your
                 personal FIRE goals. Note that this is in its early stages of development.</p>
-            </div>
-
-            <div class="jumbotron">
-                <h1 class="display-5"><a href="https://www.scorestuff.nz/">ScoreStuff</a></h1>
-                <p class="lead">Django web-app</p>
-                <p>Use the ScoreStuff app to keep track of scores; useful for
-                online card games, etc.</p>
-            </div>          
+            </div>     
 
         </div>
 
-        <div id="footer">
-            &copy; 2020 Hedley Stirrat | <a id="privacy_tag" href="https://hedleystirrat.co.nz/privacy/">Privacy</a>
+        <div id="footer" style="background-color:#868686; color: black;">
+            <ul class="nav navbar-nav flex-row justify-content-md-center justify-content-center flex-nowrap" style="padding-top: 10px; padding-bottom: 10px;">
+                <li class="nav-item">
+                    <a href="https://github.com/heds1">
+                        <img src="./img/github.png" style="width: 27px; height:27px" />
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://www.linkedin.com/in/hedley-stirrat-4b26b2117/">
+                        <img src="./img/linkedin.png" style="width: 30px; height:27px" />
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="https://stackoverflow.com/users/7978445/heds1">
+                        <img src="./img/so.png" style="width: 27px; height:27px" />
+                    </a>
+                </li>
+            </ul>
+            &copy; 2019&ndash;2020 Hedley Stirrat | <a id="privacy-tag" href="https://hedleystirrat.co.nz/privacy/">Privacy</a>
         </div>
 
     </div>
 </body>
-
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('#sidebarCollapse').on('click', function () {
-                $('#sidebar').toggleClass('active');
-            });
-        });
-    </script>
-
 </html>
 
