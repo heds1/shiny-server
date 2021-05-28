@@ -1,0 +1,24 @@
+{
+    "id": "9D15C7E3",
+    "path": "~/docs/code/r/shiny-server/add-titles-layer-control-box-leaflet-r/app.R",
+    "project_path": "app.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1622182802256.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "19,5",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1622182833,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1622182833646,
+    "read_only": false,
+    "read_only_alternatives": []
+}
